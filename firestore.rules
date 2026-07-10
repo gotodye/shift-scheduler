@@ -1,0 +1,19 @@
+rules_version = '2';
+// 貼到 Firebase 主控台 → Firestore Database → 規則(Rules) → 發布
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function em()      { return request.auth != null ? request.auth.token.email.lower() : ''; }
+    function owner()   { return em() == 'gotodye@gmail.com'; }               // 首位管理員
+    function userDoc() { return /databases/$(database)/documents/users/$(em()); }
+    function isUser()  { return request.auth != null && (owner() || exists(userDoc())); }
+    function isAdmin() { return request.auth != null && (owner() || (exists(userDoc()) && get(userDoc()).data.admin == true)); }
+
+    match /users/{email} {
+      allow read:  if request.auth != null && (isUser() || request.auth.token.email.lower() == email);
+      allow write: if isAdmin();
+    }
+    match /people/{id}    { allow read, write: if isUser(); }
+    match /templates/{id} { allow read, write: if isUser(); }
+    match /shifts/{id}    { allow read, write: if isUser(); }
+  }
+}

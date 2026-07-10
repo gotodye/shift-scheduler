@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排班系統</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- 登入 / 權限 gate -->
+<div class="gate" id="bootView"><div class="gate-box"><div class="spin"></div><p>載入中…</p></div></div>
+<div class="gate" id="loginView" hidden>
+  <div class="gate-box">
+    <div class="brand big"><span class="dot"></span> 排班系統</div>
+    <p class="muted">請使用公司授權的 Google 帳號登入。</p>
+    <button id="loginBtn" class="btn primary lg">使用 Google 登入</button>
+  </div>
+</div>
+<div class="gate" id="noAccessView" hidden>
+  <div class="gate-box">
+    <h1>沒有存取權限</h1>
+    <p class="muted">你的帳號 <b id="naEmail"></b> 尚未被授權，請聯絡管理員開通。</p>
+    <button id="signoutBtn2" class="btn ghost">換帳號登入</button>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> 排班系統</div>
+  <div class="date-nav">
+    <button id="prevDay" class="btn icon" title="前一天">‹</button>
+    <input type="date" id="datePick">
+    <button id="nextDay" class="btn icon" title="後一天">›</button>
+    <button id="todayBtn" class="btn ghost">今天</button>
+    <span id="weekday" class="weekday"></span>
+  </div>
+  <div class="top-actions">
+    <input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
+    <button id="compareBtn" class="btn ghost">上傳打卡比對</button>
+    <button id="exportBtn" class="btn primary">匯出打卡檔</button>
+    <span id="userChip" class="user-chip"></span>
+    <button id="userMgmtBtn" class="btn ghost" hidden>使用者</button>
+    <button id="signoutBtn" class="btn ghost">登出</button>
+  </div>
+</header>
+
+<nav class="units" id="unitTabs"></nav>
+
+<section class="toolbar">
+  <div class="tpl-area">
+    <span class="tb-label">班別範本</span>
+    <div class="tpl-chips" id="tplChips"></div>
+    <button id="manageTpl" class="btn ghost sm">管理範本</button>
+  </div>
+  <div class="brush">
+    <span class="tb-label">筆刷</span>
+    <button class="brush-btn active" data-brush="work">上班</button>
+    <button class="brush-btn" data-brush="off">休假</button>
+  </div>
+  <div class="tool-btns">
+    <button id="applyAll" class="btn ghost sm" disabled>套用範本到全組</button>
+    <button id="copyDay" class="btn ghost sm">複製某日</button>
+    <button id="addPerson" class="btn ghost sm">＋ 新增人員</button>
+    <button id="clearDay" class="btn ghost sm danger-text">清空當日</button>
+  </div>
+</section>
+
+<div class="hint" id="brushHint" hidden></div>
+
+<main class="grid-wrap" id="gridWrap">
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer class="legend">
+  <span><b>拖拉空白</b>＝建立班別</span>
+  <span><b>拖曳整條</b>＝調動時段</span>
+  <span><b>拉兩端</b>＝改上下班</span>
+  <span><b>點區塊</b>＝編輯/刪除/改類型</span>
+  <span><b>筆刷休假</b>＝拖出某時段休假</span>
+  <span><b>休</b>＝整日休假</span>
+  <span><b>點姓名 / 月</b>＝進入整月排班</span>
+</footer>
+
+<!-- 整月模式 overlay -->
+<div class="month-view" id="monthView" hidden>
+  <div class="mv-head">
+    <button id="mvBack" class="btn ghost">← 返回日檢視</button>
+    <span class="mv-title" id="mvTitle"></span>
+    <button id="mvEdit" class="btn ghost sm">編輯人員</button>
+    <div class="mv-monthnav">
+      <button id="mvPrev" class="btn icon" title="上個月">‹</button>
+      <span id="mvMonth" class="mv-month"></span>
+      <button id="mvNext" class="btn icon" title="下個月">›</button>
+    </div>
+  </div>
+  <div class="mv-toolbar">
+    <span class="tb-label">班別範本</span>
+    <div class="tpl-chips" id="mvTplChips"></div>
+    <div class="brush">
+      <span class="tb-label">筆刷</span>
+      <button class="brush-btn active" data-brush="work">上班</button>
+      <button class="brush-btn" data-brush="off">休假</button>
+    </div>
+    <div class="mv-tools">
+      <button id="mvApplyEvery" class="btn ghost sm" disabled>套用到整月每天</button>
+      <button id="mvApplyWeekday" class="btn ghost sm" disabled>只套用平日（一~五）</button>
+      <button id="mvWeekendLeave" class="btn ghost sm">週末設休假</button>
+      <button id="mvClear" class="btn ghost sm danger-text">清空整月</button>
+    </div>
+  </div>
+  <div class="mv-grid-wrap"><div class="grid" id="monthGrid"></div></div>
+  <div class="mv-hint">操作與日檢視相同：拖拉建立班別、拖曳整條調動、拉兩端改長短、點班別編輯／刪除、「休」標記無法上班。</div>
+</div>
+
+<!-- 打卡比對結果 overlay -->
+<div class="month-view" id="compareView" hidden>
+  <div class="mv-head">
+    <button id="cmpBack" class="btn ghost">← 返回</button>
+    <span class="mv-title">打卡比對結果</span>
+    <label class="cmp-opt">容許誤差(分)
+      <input type="number" id="cmpGrace" value="5" min="0" step="1">
+    </label>
+    <label class="cmp-opt"><input type="checkbox" id="cmpOnlyIssues"> 只看異常</label>
+    <div class="mv-monthnav">
+      <button id="cmpExport" class="btn ghost sm">匯出差異清單</button>
+    </div>
+  </div>
+  <div class="cmp-summary" id="cmpSummary"></div>
+  <div class="mv-grid-wrap"><table class="cmp-table" id="cmpTable"></table></div>
+</div>
+
+<!-- 人員 modal -->
+<div class="modal-mask" id="personModal" hidden>
+  <div class="modal">
+    <h3 id="personModalTitle">新增人員</h3>
+    <label>工號 <span class="req">*</span><input id="pmEmpNo" placeholder="例：A12345"></label>
+    <label>姓名 <span class="req">*</span><input id="pmName" placeholder="例：王小明"></label>
+    <p class="err" id="pmErr" hidden></p>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="pmSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 班別編輯 modal -->
+<div class="modal-mask" id="segModal" hidden>
+  <div class="modal">
+    <h3>編輯區塊</h3>
+    <label>類型
+      <select id="segType">
+        <option value="work">上班</option>
+        <option value="off">休假 / 不可上班</option>
+      </select>
+    </label>
+    <div class="time-row">
+      <label>開始 <select id="segStart"></select></label>
+      <label>結束 <select id="segEnd"></select></label>
+    </div>
+    <p class="err" id="segErr" hidden></p>
+    <div class="modal-actions">
+      <button class="btn danger" id="segDelete">刪除此段</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="segSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 範本管理 modal -->
+<div class="modal-mask" id="tplModal" hidden>
+  <div class="modal">
+    <h3>班別範本</h3>
+    <div id="tplList" class="tpl-list"></div>
+    <div class="tpl-add">
+      <input id="tplName" placeholder="名稱，如「早班」" style="flex:1">
+      <select id="tplStart"></select>
+      <span>~</span>
+      <select id="tplEnd"></select>
+      <button class="btn ghost sm" id="tplAdd">新增</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" data-close>完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 複製某日 modal -->
+<div class="modal-mask" id="copyModal" hidden>
+  <div class="modal">
+    <h3>複製某日班表</h3>
+    <p class="muted">把來源日期「<span id="copyUnitName"></span>」整組班表，覆蓋到目前選定的日期。</p>
+    <label>來源日期 <input type="date" id="copySrc"></label>
+    <label class="chk"><input type="checkbox" id="copyAllUnits"> 套用到全部單位（否則只複製目前單位）</label>
+    <p class="err" id="copyErr" hidden></p>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="copyGo">複製</button>
+    </div>
+  </div>
+</div>
+
+<!-- 匯出 modal -->
+<div class="modal-mask" id="exportModal" hidden>
+  <div class="modal">
+    <h3>匯出阿波羅打卡檔</h3>
+    <div class="time-row">
+      <label>起始日期 <input type="date" id="expFrom"></label>
+      <label>結束日期 <input type="date" id="expTo"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="expAllUnits" checked> 匯出全部單位（否則只匯出目前單位）</label>
+    <p class="muted small">規則：有排班→上班(W0001)+時段；中間空檔自動轉成休息時間；標記休假者→休假日(H0001)；沒排也沒標休假者不輸出。</p>
+    <p class="err" id="expErr" hidden></p>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="expGo">產生 Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- 使用者管理 modal（管理員） -->
+<div class="modal-mask" id="userModal" hidden>
+  <div class="modal">
+    <h3>使用者管理</h3>
+    <div id="umList" class="tpl-list"></div>
+    <div style="border-top:1px solid var(--line); padding-top:12px;">
+      <label>新增 / 更新使用者 Email <input id="umEmail" placeholder="someone@gmail.com"></label>
+      <label class="chk"><input type="checkbox" id="umAdmin"> 設為管理員（可管理所有單位與使用者）</label>
+      <div class="muted small" style="margin:8px 0 4px;">或勾選可編輯的單位：</div>
+      <div id="umUnits" class="um-units"></div>
+      <button class="btn ghost sm" id="umAdd" style="margin-top:10px;">新增 / 更新</button>
+    </div>
+    <div class="modal-actions"><button class="btn primary" data-close>完成</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script type="module" src="firebase-init.js"></script>
+</body>
+</html>
