@@ -51,6 +51,7 @@
       <option value="th">ไทย</option>
     </select>
     <input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
+    <button id="statsBtn" class="btn ghost" data-i18n="stats_btn">統計</button>
     <button id="compareBtn" class="btn ghost" data-i18n="compare_upload">上傳打卡比對</button>
     <button id="exportBtn" class="btn primary" data-i18n="export">匯出打卡檔</button>
     <button id="bonusBtn" class="btn ghost" data-i18n="bonus_btn" hidden>獎金報表</button>
@@ -126,6 +127,21 @@
   </div>
   <div class="mv-grid-wrap"><div class="grid" id="monthGrid"></div></div>
   <div class="mv-hint" data-i18n="mv_hint"></div>
+</div>
+
+<!-- 工時統計 overlay -->
+<div class="month-view" id="statsView" hidden>
+  <div class="mv-head">
+    <button id="statsBack" class="btn ghost" data-i18n="cmp_back">← 返回</button>
+    <span class="mv-title" data-i18n="stats_title">工時統計</span>
+    <label class="cmp-opt"><span data-i18n="from_date">起始日期</span> <input type="date" id="statsFrom"></label>
+    <label class="cmp-opt"><span data-i18n="to_date">結束日期</span> <input type="date" id="statsTo"></label>
+    <label class="cmp-opt"><input type="checkbox" id="statsAllUnits"> <span data-i18n="exp_all_units">全部單位</span></label>
+    <div class="mv-monthnav">
+      <button id="statsExport" class="btn ghost sm" data-i18n="stats_export">匯出統計</button>
+    </div>
+  </div>
+  <div class="mv-grid-wrap"><table class="cmp-table" id="statsTable"></table></div>
 </div>
 
 <!-- 打卡比對結果 overlay -->

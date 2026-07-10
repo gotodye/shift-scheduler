@@ -158,6 +158,7 @@ function scheduleRender(){
     if($('#userModal') && !$('#userModal').hidden) renderUserMgmt();
     if(monthOpen) renderMonth();
     else if(compareOpen) renderCompare();
+    else if(statsOpen) renderStats();
     else renderAll();
   });
 }
@@ -1045,12 +1046,66 @@ $('#umAdd').onclick = ()=>{
   $('#umEmail').value=''; $('#umAdmin').checked=false; $$('#umUnits input').forEach(i=>i.checked=false);
 };
 
+/* ---------- 工時統計 ---------- */
+let statsOpen = false;
+let lastStats = null;
+function monthRange(dateStr){
+  const d = new Date(dateStr+'T00:00:00'); const y=d.getFullYear(), m=d.getMonth();
+  return [ `${y}-${pad(m+1)}-01`, dateKey(new Date(y, m+1, 0)) ];
+}
+function computeStats(from, to, unitIds){
+  clearSplitCache();
+  const rows = {};
+  unitIds.forEach(uid => (state.people[uid]||[]).forEach(p => { rows[p.id] = { unit:unitName(uid), emp:p.empNo, name:p.name, student:!!p.foreignStudent, workDays:0, actual:0, clock:0, bonus:0, leave:0 }; }));
+  let d = new Date(from+'T00:00:00'); const end = new Date(to+'T00:00:00');
+  while(d <= end){
+    const key = dateKey(d);
+    unitIds.forEach(uid => (state.people[uid]||[]).forEach(p => {
+      const r = rows[p.id]; const info = computeSplit(p.id)[key];
+      if(info && info.work > 0){ r.workDays++; r.actual+=info.work; r.clock+=info.clock; r.bonus+=info.bonus; }
+      else if(isFullOff(getDay(key, p.id))) r.leave++;
+    }));
+    d.setDate(d.getDate()+1);
+  }
+  return Object.values(rows);
+}
+function renderStats(){
+  const from = $('#statsFrom').value, to = $('#statsTo').value;
+  if(!from || !to) return;
+  const unitIds = $('#statsAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
+  const data = computeStats(from, to, unitIds);
+  lastStats = { from, to, data };
+  const heads = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('st_workdays'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('st_leavedays')];
+  const body = data.map(r =>
+    `<tr><td>${esc(r.unit)}</td><td>${esc(r.emp)}</td><td>${esc(r.name)}${r.student?' <span class="stu">'+esc(t('foreign_student'))+'</span>':''}</td>`
+    + `<td>${r.workDays}</td><td>${fmtHrs(r.actual)}</td><td>${fmtHrs(r.clock)}</td><td>${fmtHrs(r.bonus)}</td><td>${r.leave}</td></tr>`).join('');
+  const tot = data.reduce((a,r)=>{ a.wd+=r.workDays; a.ac+=r.actual; a.cl+=r.clock; a.bo+=r.bonus; a.lv+=r.leave; return a; }, {wd:0,ac:0,cl:0,bo:0,lv:0});
+  const totRow = `<tr class="c-tot"><td colspan="3">${t('st_total_row')}</td><td>${tot.wd}</td><td>${fmtHrs(tot.ac)}</td><td>${fmtHrs(tot.cl)}</td><td>${fmtHrs(tot.bo)}</td><td>${tot.lv}</td></tr>`;
+  $('#statsTable').innerHTML = `<thead><tr>${heads.map(h=>'<th>'+h+'</th>').join('')}</tr></thead>`
+    + `<tbody>${data.length ? body+totRow : '<tr><td colspan="8" class="empty">'+t('stats_none')+'</td></tr>'}</tbody>`;
+}
+$('#statsBtn').onclick = ()=>{ const r = monthRange(curDate); $('#statsFrom').value=r[0]; $('#statsTo').value=r[1]; statsOpen=true; $('#statsView').hidden=false; renderStats(); };
+$('#statsBack').onclick = ()=>{ statsOpen=false; $('#statsView').hidden=true; };
+$('#statsFrom').onchange = ()=>{ if(statsOpen) renderStats(); };
+$('#statsTo').onchange = ()=>{ if(statsOpen) renderStats(); };
+$('#statsAllUnits').onchange = ()=>{ if(statsOpen) renderStats(); };
+$('#statsExport').onclick = ()=>{
+  if(!lastStats || !lastStats.data.length){ alert(t('stats_none')); return; }
+  if(typeof XLSX==='undefined'){ alert(t('xlsx_missing')); return; }
+  const head = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('foreign_student'),t('st_workdays'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('st_leavedays')];
+  const aoa = [head, ...lastStats.data.map(r=>[r.unit,r.emp,r.name,(r.student?'V':''),r.workDays,fmtHrs(r.actual),fmtHrs(r.clock),fmtHrs(r.bonus),r.leave])];
+  const ws = XLSX.utils.aoa_to_sheet(aoa); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t('stats_title').slice(0,31));
+  XLSX.writeFile(wb, '工時統計_'+lastStats.from.replace(/-/g,'')+'_'+lastStats.to.replace(/-/g,'')+'.xlsx');
+};
+
 /* ---------- 語言 ---------- */
 $$('.lang-sel').forEach(s => { s.value = getLang(); s.onchange = (e)=> setLang(e.target.value); });
 window.onLangChange = function(){
   if(!$('#userModal').hidden) renderUserMgmt();
   if(monthOpen) renderMonth();
   else if(compareOpen) renderCompare();
+  else if(statsOpen) renderStats();
   else if(document.body.classList.contains('authed')) renderAll();
 };
 

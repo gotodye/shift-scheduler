@@ -215,6 +215,8 @@ body:not(.authed) .legend{ display:none; }
 .cmp-table tr.c-warn td:last-child{ color:#8a5a00; font-weight:600; }
 .cmp-table tr.c-ok td:last-child{ color:#1a7a42; }
 .cmp-table td.empty{ text-align:center; color:var(--muted); padding:24px; }
+.cmp-table tr.c-tot td{ font-weight:600; background:#f2f4f7; border-top:2px solid var(--line-strong); }
+.stu{ font-size:11px; background:#eef; color:#3a3aa0; border-radius:10px; padding:1px 7px; margin-left:4px; }
 
 .day-cell{ gap:6px; }
 .day-cell .who{ flex:1; }
