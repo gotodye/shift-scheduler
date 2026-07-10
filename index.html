@@ -53,6 +53,7 @@
     <input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
     <button id="compareBtn" class="btn ghost" data-i18n="compare_upload">上傳打卡比對</button>
     <button id="exportBtn" class="btn primary" data-i18n="export">匯出打卡檔</button>
+    <button id="bonusBtn" class="btn ghost" data-i18n="bonus_btn" hidden>獎金報表</button>
     <span id="userChip" class="user-chip"></span>
     <button id="userMgmtBtn" class="btn ghost" data-i18n="users" hidden>使用者</button>
     <button id="signoutBtn" class="btn ghost" data-i18n="signout">登出</button>
@@ -150,6 +151,7 @@
     <h3 id="personModalTitle">新增人員</h3>
     <label><span data-i18n="empno">工號</span> <span class="req">*</span><input id="pmEmpNo" data-i18n-ph="empno_ph" placeholder="例：A12345"></label>
     <label><span data-i18n="name">姓名</span> <span class="req">*</span><input id="pmName" data-i18n-ph="name_ph" placeholder="例：王小明"></label>
+    <label class="chk"><input type="checkbox" id="pmForeign"> <span data-i18n="foreign_student">外籍學生</span></label>
     <p class="err" id="pmErr" hidden></p>
     <div class="modal-actions">
       <button class="btn ghost" data-close data-i18n="cancel">取消</button>
@@ -229,6 +231,24 @@
     <div class="modal-actions">
       <button class="btn ghost" data-close data-i18n="cancel">取消</button>
       <button class="btn primary" id="expGo" data-i18n="gen_excel">產生 Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- 獎金時數報表 modal（管理員） -->
+<div class="modal-mask" id="bonusModal" hidden>
+  <div class="modal">
+    <h3 data-i18n="bonus_report">獎金時數報表</h3>
+    <div class="time-row">
+      <label><span data-i18n="from_date">起始日期</span> <input type="date" id="bonusFrom"></label>
+      <label><span data-i18n="to_date">結束日期</span> <input type="date" id="bonusTo"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="bonusAllUnits" checked> <span data-i18n="exp_all_units">匯出全部單位</span></label>
+    <p class="muted small" data-i18n="bonus_desc"></p>
+    <p class="err" id="bonusErr" hidden></p>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close data-i18n="cancel">取消</button>
+      <button class="btn primary" id="bonusGo" data-i18n="gen_excel">產生 Excel</button>
     </div>
   </div>
 </div>

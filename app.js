@@ -18,6 +18,11 @@ const SHIFT_CODE = 'B001';     // 班次代碼：客服班（已確認）
 const STATUS_WORK = 'W0001';
 const STATUS_LEAVE = 'H0001';
 
+/* 勞動條件上限 */
+const MAX_DAY_MIN = 480;             // 每天 8 小時
+const MAX_WEEK_STUDENT_MIN = 1200;   // 外籍學生每週 20 小時
+const MAX_CONSEC = 5;                // 連續上班 5 天
+
 const APOLLO_HEADER = [
   '*工號','姓名','*日期(YYYY/MM/DD)','*狀態代碼','班次代碼','上班時間(HH:mm)','下班時間(HH:mm)',
   '休息時間(hh:mm~hh:mm；如有多組以","分隔；最多3組)','全天支援單位代碼',
@@ -100,7 +105,7 @@ function isFullOff(day){ return day.off.some(o => o[0] <= 0 && o[1] >= SLOTS); }
 /* 雲端資料進來時重建 state 並重繪 */
 function applyCloudSnapshot(d){
   const people = {}; UNIT_IDS.forEach(id => people[id] = []);
-  (d.people||[]).forEach(p => { if(!people[p.unitId]) people[p.unitId] = []; people[p.unitId].push({ id:p.id, unitId:p.unitId, empNo:p.empNo, name:p.name }); });
+  (d.people||[]).forEach(p => { if(!people[p.unitId]) people[p.unitId] = []; people[p.unitId].push({ id:p.id, unitId:p.unitId, empNo:p.empNo, name:p.name, foreignStudent:!!p.foreignStudent }); });
   state.people = people;
   state.templates = (d.templates||[]).slice().sort((a,b)=> (a.start||'').localeCompare(b.start||''));
   maybeSeedTemplates();
@@ -108,6 +113,7 @@ function applyCloudSnapshot(d){
   (d.shifts||[]).forEach(s => { if(!sched[s.date]) sched[s.date] = {}; sched[s.date][s.personId] = { work:s.work||[], off:s.off||[] }; });
   state.schedule = sched;
   usersList = d.users || [];
+  clearSplitCache();
   scheduleRender();
 }
 window.applyCloudSnapshot = applyCloudSnapshot;
@@ -148,6 +154,7 @@ function setAccess(a){
   if(myUnits.indexOf(curUnit) < 0 && !isAdmin){ curUnit = myUnits[0] || 'ID'; }
   const chip = $('#userChip'); if(chip){ chip.textContent = (a.name||a.email) + (isAdmin?t('admin_paren'):''); }
   $('#userMgmtBtn').hidden = !isAdmin;
+  $('#bonusBtn').hidden = !isAdmin;
   $('#bootView').hidden = true; $('#loginView').hidden = true; $('#noAccessView').hidden = true;
   document.body.classList.add('authed');
   renderAll();
@@ -177,6 +184,65 @@ function subtractRange(list, r){
   }
   return out;
 }
+
+/* ---------- 勞動條件：把工時拆成「打卡」與「獎金」 ---------- */
+function workMinutesOfDay(date, personId){
+  return normalize(getDay(date, personId).work).reduce((s,seg)=> s + (seg[1]-seg[0])*30, 0);
+}
+function weekKeyOf(date){
+  const d = new Date(date+'T00:00:00');
+  d.setDate(d.getDate() - ((d.getDay()+6)%7));   // 回到該週週一
+  return dateKey(d);
+}
+function isNextDay(a, b){
+  const d = new Date(a+'T00:00:00'); d.setDate(d.getDate()+1);
+  return dateKey(d) === b;
+}
+/* 依「最早 clockSlots 格」把 work 切成打卡段與獎金段 */
+function clipWork(work, clockSlots){
+  let rem = clockSlots; const clock=[], bonus=[];
+  normalize(work).forEach(seg=>{
+    const len = seg[1]-seg[0];
+    if(rem<=0){ bonus.push([seg[0],seg[1]]); return; }
+    if(len<=rem){ clock.push([seg[0],seg[1]]); rem-=len; }
+    else { clock.push([seg[0], seg[0]+rem]); bonus.push([seg[0]+rem, seg[1]]); rem=0; }
+  });
+  return { clock, bonus };
+}
+let _splitCache = {};
+function clearSplitCache(){ _splitCache = {}; }
+/* 某人所有排班日的拆分：date -> {work, clock, bonus, reasons}（分鐘） */
+function computeSplit(personId){
+  if(_splitCache[personId]) return _splitCache[personId];
+  const p = findPerson(personId);
+  const student = !!(p && p.foreignStudent);
+  const dates = [];
+  for(const dt in state.schedule){ const v = state.schedule[dt][personId]; if(v && v.work && v.work.length) dates.push(dt); }
+  dates.sort();
+  const res = {}; let prev=null, consec=0; const weekClock={};
+  dates.forEach(date=>{
+    const wmin = workMinutesOfDay(date, personId);
+    if(prev && isNextDay(prev, date)) consec++; else consec = 1;
+    prev = date;
+    let clockMin = 0, bonusMin = 0; const reasons = [];
+    if(consec > MAX_CONSEC){ bonusMin = wmin; clockMin = 0; reasons.push('consec'); }
+    else { clockMin = Math.min(wmin, MAX_DAY_MIN); if(wmin > MAX_DAY_MIN){ bonusMin += wmin - MAX_DAY_MIN; reasons.push('day8'); } }
+    if(student && clockMin > 0){
+      const wk = weekKeyOf(date); const used = weekClock[wk] || 0;
+      if(used + clockMin > MAX_WEEK_STUDENT_MIN){
+        const allow = Math.max(0, MAX_WEEK_STUDENT_MIN - used);
+        const moved = clockMin - allow;
+        if(moved > 0){ bonusMin += moved; clockMin = allow; reasons.push('week20'); }
+      }
+      weekClock[wk] = (weekClock[wk] || 0) + clockMin;
+    }
+    res[date] = { work:wmin, clock:clockMin, bonus:bonusMin, reasons };
+  });
+  _splitCache[personId] = res;
+  return res;
+}
+function reasonText(reasons){ return (reasons||[]).map(r=> t(r==='consec'?'rs_consec':r==='day8'?'rs_day8':'rs_week20')).join(getLang()==='zh'?'、':', '); }
+function fmtHrs(min){ return (Math.round(min/60*10)/10).toString(); }
 
 /* ---------- 渲染 ---------- */
 function renderTabs(){
@@ -214,6 +280,7 @@ function updateBrushHint(){
 }
 
 function renderGrid(){
+  clearSplitCache();
   $('#weekday').textContent = weekdayCh(curDate);
   $('#datePick').value = curDate;
   const vis = visibleUnits();
@@ -273,6 +340,15 @@ function buildTrack(date, personId){
   track.dataset.person = personId; track.dataset.date = date;
   day.off.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'off', idx, seg)));
   day.work.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'work', idx, seg)));
+  // 超出法定範圍的工時 → 紅色標示（純提醒、不影響操作）
+  const info = computeSplit(personId)[date];
+  if(info && info.bonus > 0){
+    clipWork(day.work, info.clock/30).bonus.forEach(seg=>{
+      const o = document.createElement('div'); o.className='over'; positionSeg(o, seg);
+      o.title = t('bh_bonus') + '：' + reasonText(info.reasons);
+      track.appendChild(o);
+    });
+  }
   track.addEventListener('pointerdown', (ev)=> startPaint(ev, date, personId, track));
   return track;
 }
@@ -451,6 +527,7 @@ function monthDates(){
 }
 
 function renderMonth(){
+  clearSplitCache();
   const p = findPerson(monthCtx.personId);
   if(!p){ closeMonthView(); return; }
   const unit = UNITS.find(u => u.id === p.unitId) || UNITS.find(u => u.id === curUnit);
@@ -538,6 +615,7 @@ function openPersonModal(p){
   $('#personModalTitle').textContent = p ? t('pm_edit') : t('pm_add');
   $('#pmEmpNo').value = p ? p.empNo : '';
   $('#pmName').value = p ? p.name : '';
+  $('#pmForeign').checked = !!(p && p.foreignStudent);
   $('#pmErr').hidden = true;
   let delBtn = $('#pmDelete');
   if(p){
@@ -569,8 +647,9 @@ $('#pmSave').onclick = ()=>{
   if(!empNo || !name){ showErr('#pmErr', t('pm_err_required')); return; }
   const dup = (state.people[curUnit]||[]).some(x => x.empNo===empNo && x!==editingPerson);
   if(dup){ showErr('#pmErr', t('pm_err_dup')); return; }
-  if(editingPerson){ editingPerson.empNo=empNo; editingPerson.name=name; if(window.SB) window.SB.writePerson(editingPerson); }
-  else { const np={ id:pid(), unitId:curUnit, empNo, name }; state.people[curUnit].push(np); if(window.SB) window.SB.writePerson(np); }
+  const foreign = $('#pmForeign').checked;
+  if(editingPerson){ editingPerson.empNo=empNo; editingPerson.name=name; editingPerson.foreignStudent=foreign; if(window.SB) window.SB.writePerson(editingPerson); }
+  else { const np={ id:pid(), unitId:curUnit, empNo, name, foreignStudent:foreign }; state.people[curUnit].push(np); if(window.SB) window.SB.writePerson(np); }
   save(); closeModal('#personModal'); renderAll(); if(monthOpen) renderMonth();
 };
 
@@ -649,6 +728,7 @@ $('#clearDay').onclick = ()=>{
 
 /* ---------- 匯出 ---------- */
 function buildRows(from, to, unitIds){
+  clearSplitCache();
   const rows = [];
   const warns = [];
   let d = new Date(from+'T00:00:00'); const end = new Date(to+'T00:00:00');
@@ -657,23 +737,46 @@ function buildRows(from, to, unitIds){
     unitIds.forEach(uid=>{
       (state.people[uid]||[]).forEach(p=>{
         const day = getDay(key, p.id);
-        const work = normalize(day.work);
-        if(work.length){
-          const on = slotToTime(work[0][0]);
-          const off = slotToTime(work[work.length-1][1]);
-          const breaks = [];
-          for(let i=0;i<work.length-1;i++) breaks.push(slotToTime(work[i][1])+'~'+slotToTime(work[i+1][0]));
-          if(breaks.length>3) warns.push(t('exp_warn_break', { name:p.name, date:apolloDate(key) }));
-          rows.push([p.empNo, p.name, apolloDate(key), STATUS_WORK, SHIFT_CODE, on, off, breaks.slice(0,3).join(','), '', '', '', '', '', '', '', '', '', '']);
-        } else if(isFullOff(day)){
+        if(isFullOff(day)){
           rows.push([p.empNo, p.name, apolloDate(key), STATUS_LEAVE, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+          return;
         }
-        // 只有部分休假、或完全空白 → 不輸出（代表可臨時加班）
+        const info = computeSplit(p.id)[key];
+        if(!info || info.clock <= 0) return;                     // 無打卡時數（整天進獎金）→ 不輸出
+        const work = clipWork(day.work, info.clock/30).clock;    // 只取合法可打卡的部分
+        if(!work.length) return;
+        const on = slotToTime(work[0][0]);
+        const off = slotToTime(work[work.length-1][1]);
+        const breaks = [];
+        for(let i=0;i<work.length-1;i++) breaks.push(slotToTime(work[i][1])+'~'+slotToTime(work[i+1][0]));
+        if(breaks.length>3) warns.push(t('exp_warn_break', { name:p.name, date:apolloDate(key) }));
+        rows.push([p.empNo, p.name, apolloDate(key), STATUS_WORK, SHIFT_CODE, on, off, breaks.slice(0,3).join(','), '', '', '', '', '', '', '', '', '', '']);
       });
     });
     d.setDate(d.getDate()+1);
   }
   return { rows, warns };
+}
+
+/* 獎金時數：明細 + 每人總計 */
+function buildBonusData(from, to, unitIds){
+  clearSplitCache();
+  const detail = []; const totals = {};
+  let d = new Date(from+'T00:00:00'); const end = new Date(to+'T00:00:00');
+  while(d <= end){
+    const key = dateKey(d); const dow = new Date(key+'T00:00:00').getDay();
+    unitIds.forEach(uid=>{
+      (state.people[uid]||[]).forEach(p=>{
+        const info = computeSplit(p.id)[key];
+        if(!info || info.bonus <= 0) return;
+        detail.push([unitName(uid), p.empNo, p.name, apolloDate(key), dowLabel(dow), fmtHrs(info.work), fmtHrs(info.clock), fmtHrs(info.bonus), reasonText(info.reasons)]);
+        if(!totals[p.id]) totals[p.id] = { unit:unitName(uid), emp:p.empNo, name:p.name, min:0 };
+        totals[p.id].min += info.bonus;
+      });
+    });
+    d.setDate(d.getDate()+1);
+  }
+  return { detail, totals: Object.values(totals) };
 }
 $('#expGo').onclick = ()=>{
   const from = $('#expFrom').value, to = $('#expTo').value;
@@ -711,6 +814,27 @@ $('#applyAll').onclick = applyTemplateAll;
 $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
 $('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
 $('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; showModal('#exportModal'); };
+
+$('#bonusBtn').onclick = ()=>{ if(!isAdmin) return; $('#bonusFrom').value=curDate; $('#bonusTo').value=curDate; $('#bonusErr').hidden=true; showModal('#bonusModal'); };
+$('#bonusGo').onclick = ()=>{
+  if(!isAdmin) return;
+  const from = $('#bonusFrom').value, to = $('#bonusTo').value;
+  if(!from || !to){ showErr('#bonusErr', t('exp_err_dates')); return; }
+  if(to < from){ showErr('#bonusErr', t('exp_err_order')); return; }
+  const unitIds = $('#bonusAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
+  const { detail, totals } = buildBonusData(from, to, unitIds);
+  if(!detail.length){ showErr('#bonusErr', t('bonus_none')); return; }
+  if(typeof XLSX === 'undefined'){ showErr('#bonusErr', t('xlsx_missing')); return; }
+  const h1 = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('bh_date'),t('bh_weekday'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('bh_reason')];
+  const ws1 = XLSX.utils.aoa_to_sheet([h1, ...detail]);
+  const h2 = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('bh_hours')];
+  const ws2 = XLSX.utils.aoa_to_sheet([h2, ...totals.map(x=>[x.unit,x.emp,x.name,fmtHrs(x.min)])]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, t('bs_detail'));
+  XLSX.utils.book_append_sheet(wb, ws2, t('bs_total'));
+  XLSX.writeFile(wb, '獎金時數_'+from.replace(/-/g,'')+'_'+to.replace(/-/g,'')+'.xlsx');
+  closeModal('#bonusModal');
+};
 
 $('#mvBack').onclick = closeMonthView;
 $('#mvEdit').onclick = ()=>{ const p=(state.people[curUnit]||[]).find(x=>x.id===monthCtx.personId); if(p) openPersonModal(p); };

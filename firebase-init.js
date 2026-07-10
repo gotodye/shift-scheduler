@@ -38,7 +38,7 @@ window.SB = {
       .catch(e => console.warn("writeShift", e));
   },
   deleteShift(date, personId){ return deleteDoc(doc(db, "shifts", date + "__" + personId)).catch(()=>{}); },
-  writePerson(p){ return setDoc(doc(db, "people", p.id), { unitId:p.unitId, empNo:p.empNo, name:p.name }).catch(e=>alert(tt('save_person_fail','儲存人員失敗：')+e.message)); },
+  writePerson(p){ return setDoc(doc(db, "people", p.id), { unitId:p.unitId, empNo:p.empNo, name:p.name, foreignStudent:!!p.foreignStudent }).catch(e=>alert(tt('save_person_fail','儲存人員失敗：')+e.message)); },
   deletePerson(id){ return deleteDoc(doc(db, "people", id)).catch(e=>console.warn(e)); },
   writeTemplate(t){ return setDoc(doc(db, "templates", t.id), { name:t.name, start:t.start, end:t.end, unitId:t.unitId||'' }).catch(e=>console.warn(e)); },
   deleteTemplate(id){ return deleteDoc(doc(db, "templates", id)).catch(e=>console.warn(e)); },
