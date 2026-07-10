@@ -1366,6 +1366,18 @@ $('#rosterExport').onclick=()=>{
   XLSX.writeFile(wb,'月班表_'+R.y+pad(R.m+1)+'.xlsx');
 };
 
+/* ---------- 下拉選單 ---------- */
+$$('[data-menu]').forEach(m => {
+  m.querySelector('.menu-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const open = m.classList.contains('open');
+    $$('[data-menu]').forEach(x => x.classList.remove('open'));
+    if(!open) m.classList.add('open');
+  });
+  m.querySelectorAll('.menu-keep').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
+});
+document.addEventListener('click', () => $$('[data-menu]').forEach(x => x.classList.remove('open')));
+
 /* ---------- 語言 ---------- */
 $$('.lang-sel').forEach(s => { s.value = getLang(); s.onchange = (e)=> setLang(e.target.value); });
 window.onLangChange = function(){

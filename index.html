@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>排班系統</title>
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -35,32 +35,44 @@
   </div>
 </div>
 
+<input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
+
 <header class="topbar">
-  <div class="brand"><span class="dot"></span> <span data-i18n="app_title">排班系統</span></div>
+  <div class="brand"><span class="dot"></span> <span class="brand-txt" data-i18n="app_title">排班系統</span></div>
   <div class="date-nav">
     <button id="prevDay" class="btn icon" data-i18n-title="prev_day" title="前一天">‹</button>
     <input type="date" id="datePick">
     <button id="nextDay" class="btn icon" data-i18n-title="next_day" title="後一天">›</button>
-    <button id="todayBtn" class="btn ghost" data-i18n="today">今天</button>
+    <button id="todayBtn" class="btn ghost sm" data-i18n="today">今天</button>
     <span id="weekday" class="weekday"></span>
   </div>
   <div class="top-actions">
-    <select id="langSel" class="lang-sel" title="Language">
-      <option value="zh">中文</option>
-      <option value="en">English</option>
-      <option value="vi">Tiếng Việt</option>
-      <option value="th">ไทย</option>
-    </select>
-    <input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
-    <button id="weekBtn" class="btn ghost" data-i18n="week_view">週檢視</button>
-    <button id="rosterBtn" class="btn ghost" data-i18n="roster_btn">月班表</button>
-    <button id="statsBtn" class="btn ghost" data-i18n="stats_btn">統計</button>
-    <button id="compareBtn" class="btn ghost" data-i18n="compare_upload">上傳打卡比對</button>
     <button id="exportBtn" class="btn primary" data-i18n="export">匯出打卡檔</button>
-    <button id="bonusBtn" class="btn ghost" data-i18n="bonus_btn" hidden>獎金報表</button>
-    <span id="userChip" class="user-chip"></span>
-    <button id="userMgmtBtn" class="btn ghost" data-i18n="users" hidden>使用者</button>
-    <button id="signoutBtn" class="btn ghost" data-i18n="signout">登出</button>
+    <div class="menu" data-menu>
+      <button class="btn ghost menu-btn caret" data-i18n="menu_view">檢視</button>
+      <div class="menu-list">
+        <button id="weekBtn" data-i18n="week_view">週檢視</button>
+        <button id="rosterBtn" data-i18n="roster_btn">月班表</button>
+        <button id="statsBtn" data-i18n="stats_btn">統計</button>
+        <button id="compareBtn" data-i18n="compare_upload">上傳打卡比對</button>
+        <button id="bonusBtn" data-i18n="bonus_btn" hidden>獎金報表</button>
+      </div>
+    </div>
+    <div class="menu" data-menu>
+      <button class="btn ghost menu-btn caret"><span id="userChip" class="user-chip"></span></button>
+      <div class="menu-list menu-right">
+        <div class="menu-row menu-keep"><span data-i18n="lang_label">語言</span>
+          <select id="langSel" class="lang-sel" title="Language">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="th">ไทย</option>
+          </select>
+        </div>
+        <button id="userMgmtBtn" data-i18n="users" hidden>使用者</button>
+        <button id="signoutBtn" data-i18n="signout">登出</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -70,7 +82,6 @@
   <div class="tpl-area">
     <span class="tb-label" data-i18n="tpl_label">班別範本</span>
     <div class="tpl-chips" id="tplChips"></div>
-    <button id="manageTpl" class="btn ghost sm" data-i18n="manage_tpl">管理範本</button>
   </div>
   <div class="brush">
     <span class="tb-label" data-i18n="brush">筆刷</span>
@@ -79,11 +90,17 @@
   </div>
   <div class="tool-btns">
     <button id="applyAll" class="btn ghost sm" data-i18n="apply_all" disabled>套用範本到全組</button>
-    <button id="copyDay" class="btn ghost sm" data-i18n="copy_day">複製某日</button>
-    <button id="copyWeek" class="btn ghost sm" data-i18n="copy_week">複製上週</button>
-    <button id="swapBtn" class="btn ghost sm" data-i18n="swap_btn">交換/移動</button>
     <button id="addPerson" class="btn ghost sm" data-i18n="add_person">＋ 新增人員</button>
-    <button id="clearDay" class="btn ghost sm danger-text" data-i18n="clear_day">清空當日</button>
+    <div class="menu" data-menu>
+      <button class="btn ghost sm menu-btn caret" data-i18n="menu_more">更多</button>
+      <div class="menu-list menu-right">
+        <button id="manageTpl" data-i18n="manage_tpl">管理範本</button>
+        <button id="copyDay" data-i18n="copy_day">複製某日</button>
+        <button id="copyWeek" data-i18n="copy_week">複製上週</button>
+        <button id="swapBtn" data-i18n="swap_btn">交換/移動</button>
+        <button id="clearDay" class="danger-text" data-i18n="clear_day">清空當日</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -348,8 +365,8 @@
   </div>
 </div>
 
-<script src="i18n.js?v=4"></script>
-<script src="app.js?v=4"></script>
-<script type="module" src="firebase-init.js?v=4"></script>
+<script src="i18n.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script type="module" src="firebase-init.js?v=5"></script>
 </body>
 </html>

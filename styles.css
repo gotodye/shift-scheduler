@@ -40,8 +40,8 @@ body:not(.authed) .legend{ display:none; }
 .uchk input{ width:auto; margin:0; }
 
 /* top bar */
-.topbar{ display:flex; align-items:center; gap:16px; padding:10px 16px; background:var(--panel);
-  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30; }
+.topbar{ display:flex; align-items:center; gap:14px; padding:10px 16px; background:var(--panel);
+  box-shadow:0 1px 0 var(--line), 0 2px 8px rgba(20,24,33,.03); position:sticky; top:0; z-index:30; }
 .brand{ font-weight:700; font-size:16px; display:flex; align-items:center; gap:8px; white-space:nowrap; }
 .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); display:inline-block; }
 .date-nav{ display:flex; align-items:center; gap:8px; }
@@ -49,6 +49,45 @@ body:not(.authed) .legend{ display:none; }
 .weekday{ color:var(--muted); font-weight:600; min-width:44px; }
 .top-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .lang-sel{ padding:6px 8px; border:1px solid var(--line-strong); border-radius:8px; font-size:13px; background:#fff; }
+
+/* 下拉選單 */
+.menu{ position:relative; }
+.menu-btn.caret::after{ content:'▾'; margin-left:6px; font-size:10px; opacity:.6; }
+.menu-list{ display:none; position:absolute; top:calc(100% + 6px); left:0; min-width:190px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px;
+  box-shadow:0 10px 34px rgba(20,24,33,.14); z-index:50; }
+.menu-list.menu-right{ left:auto; right:0; }
+.menu.open .menu-list{ display:block; }
+.menu-list button{ display:block; width:100%; text-align:left; border:none; background:none;
+  padding:9px 12px; border-radius:8px; font-size:14px; color:var(--ink); cursor:pointer; }
+.menu-list button:hover{ background:#f2f4f7; }
+.menu-list button.danger-text{ color:var(--danger); }
+.menu-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 12px; font-size:14px; }
+.menu-row .lang-sel{ width:auto; }
+.user-chip{ max-width:150px; }
+
+/* 手機響應式 */
+@media (max-width:760px){
+  :root{ --name-w:118px; --slot:22px; }
+  .topbar{ gap:8px; padding:8px 10px; flex-wrap:wrap; }
+  .brand-txt{ display:none; }
+  .weekday{ display:none; }
+  .date-nav{ gap:6px; }
+  .date-nav input[type=date]{ padding:6px; font-size:13px; }
+  .top-actions{ gap:6px; }
+  .units{ padding:8px 10px 0; gap:4px; }
+  .unit-tab{ padding:6px 11px; font-size:13px; }
+  .toolbar{ padding:8px 10px; gap:10px; }
+  .grid-wrap{ padding:0 8px 12px; }
+  .legend{ font-size:12px; gap:12px; padding:4px 12px 16px; }
+  .mini{ width:30px; height:30px; }
+  .modal{ width:96vw; max-height:90vh; overflow:auto; }
+  .mv-head{ flex-wrap:wrap; gap:8px; padding:10px; }
+  .mv-toolbar{ padding:8px 10px; }
+  .cmp-opt{ font-size:12px; }
+  .kpi-v{ font-size:24px; }
+  .user-chip{ max-width:90px; }
+}
 
 /* buttons */
 .btn{ cursor:pointer; border:1px solid var(--line-strong); background:#fff; color:var(--ink);
