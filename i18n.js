@@ -224,6 +224,11 @@ Object.assign(I18N.en, { tpl_break:'Break', stats_btn:'Stats', stats_title:'Work
 Object.assign(I18N.vi, { tpl_break:'Nghỉ', stats_btn:'Thống kê', stats_title:'Thống kê giờ làm', st_workdays:'Ngày làm', st_leavedays:'Ngày nghỉ', st_total_row:'Tổng', stats_export:'Xuất thống kê', stats_none:'Không có dữ liệu trong khoảng này.' });
 Object.assign(I18N.th, { tpl_break:'พัก', stats_btn:'สถิติ', stats_title:'สถิติชั่วโมงทำงาน', st_workdays:'วันทำงาน', st_leavedays:'วันลา', st_total_row:'รวม', stats_export:'ส่งออกสถิติ', stats_none:'ไม่มีข้อมูลในช่วงนี้' });
 
+Object.assign(I18N.zh, { dash_people:'員工數', dash_vio_days:'違規天數', vio_over8:'超過8小時', vio_consec:'連續超5天', vio_week:'學生週超20', dash_chart:'各員工時數（打卡＋獎金）', dash_vio_title:'違規統計', dash_student_week:'外籍學生每週時數', st_week:'週起', st_vio:'違規', unit_days:'天', unit_weeks:'週' });
+Object.assign(I18N.en, { dash_people:'Employees', dash_vio_days:'Flagged days', vio_over8:'Over 8h', vio_consec:'Over 5 consec.', vio_week:'Student wk>20', dash_chart:'Hours per employee (clocked + bonus)', dash_vio_title:'Violations', dash_student_week:'Foreign-student weekly hours', st_week:'Week of', st_vio:'Flags', unit_days:'days', unit_weeks:'weeks' });
+Object.assign(I18N.vi, { dash_people:'Nhân viên', dash_vio_days:'Ngày vi phạm', vio_over8:'Quá 8 giờ', vio_consec:'Quá 5 ngày LT', vio_week:'SV tuần>20', dash_chart:'Giờ theo nhân viên (chấm công + thưởng)', dash_vio_title:'Vi phạm', dash_student_week:'Giờ hàng tuần của SV nước ngoài', st_week:'Tuần từ', st_vio:'Vi phạm', unit_days:'ngày', unit_weeks:'tuần' });
+Object.assign(I18N.th, { dash_people:'พนักงาน', dash_vio_days:'วันผิดกฎ', vio_over8:'เกิน 8 ชม.', vio_consec:'เกิน 5 วันติด', vio_week:'นศ.สัปดาห์>20', dash_chart:'ชั่วโมงต่อคน (ลงเวลา + โบนัส)', dash_vio_title:'การผิดกฎ', dash_student_week:'ชั่วโมงรายสัปดาห์ นศ.ต่างชาติ', st_week:'สัปดาห์ของ', st_vio:'ผิดกฎ', unit_days:'วัน', unit_weeks:'สัปดาห์' });
+
 /* 內建範本名稱 → 翻譯鍵；使用者自訂的名稱則原樣顯示 */
 const TPL_KEY = { '早班':'tpl_early', '中班':'tpl_mid', '晚班':'tpl_late', '早半':'tpl_early_half', '午半':'tpl_noon_half' };
 function tplLabel(name){ const k = TPL_KEY[name]; return k ? t(k) : name; }

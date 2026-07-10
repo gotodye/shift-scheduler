@@ -6,6 +6,7 @@
 <title>排班系統</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -141,7 +142,7 @@
       <button id="statsExport" class="btn ghost sm" data-i18n="stats_export">匯出統計</button>
     </div>
   </div>
-  <div class="mv-grid-wrap"><table class="cmp-table" id="statsTable"></table></div>
+  <div class="mv-grid-wrap"><div class="dash" id="statsBody"></div></div>
 </div>
 
 <!-- 打卡比對結果 overlay -->

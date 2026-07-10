@@ -1056,33 +1056,83 @@ function monthRange(dateStr){
 function computeStats(from, to, unitIds){
   clearSplitCache();
   const rows = {};
-  unitIds.forEach(uid => (state.people[uid]||[]).forEach(p => { rows[p.id] = { unit:unitName(uid), emp:p.empNo, name:p.name, student:!!p.foreignStudent, workDays:0, actual:0, clock:0, bonus:0, leave:0 }; }));
+  unitIds.forEach(uid => (state.people[uid]||[]).forEach(p => { rows[p.id] = { unit:unitName(uid), emp:p.empNo, name:p.name, student:!!p.foreignStudent, workDays:0, actual:0, clock:0, bonus:0, leave:0, vioDays:0, over8:0, consec:0, weeks:{}, _wo:{} }; }));
   let d = new Date(from+'T00:00:00'); const end = new Date(to+'T00:00:00');
   while(d <= end){
     const key = dateKey(d);
     unitIds.forEach(uid => (state.people[uid]||[]).forEach(p => {
       const r = rows[p.id]; const info = computeSplit(p.id)[key];
-      if(info && info.work > 0){ r.workDays++; r.actual+=info.work; r.clock+=info.clock; r.bonus+=info.bonus; }
-      else if(isFullOff(getDay(key, p.id))) r.leave++;
+      if(info && info.work > 0){
+        r.workDays++; r.actual+=info.work; r.clock+=info.clock; r.bonus+=info.bonus;
+        const wk = weekKeyOf(key); r.weeks[wk] = (r.weeks[wk]||0) + info.work;
+        if(info.bonus>0) r.vioDays++;
+        if(info.reasons.indexOf('day8')>=0) r.over8++;
+        if(info.reasons.indexOf('consec')>=0) r.consec++;
+        if(info.reasons.indexOf('week20')>=0) r._wo[wk] = 1;
+      } else if(isFullOff(getDay(key, p.id))) r.leave++;
     }));
     d.setDate(d.getDate()+1);
   }
-  return Object.values(rows);
+  const arr = Object.values(rows);
+  arr.forEach(r => { r.weekOver = Object.keys(r._wo).length; });
+  return arr;
 }
+let _statsChart = null;
 function renderStats(){
   const from = $('#statsFrom').value, to = $('#statsTo').value;
   if(!from || !to) return;
   const unitIds = $('#statsAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   const data = computeStats(from, to, unitIds);
   lastStats = { from, to, data };
-  const heads = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('st_workdays'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('st_leavedays')];
-  const body = data.map(r =>
-    `<tr><td>${esc(r.unit)}</td><td>${esc(r.emp)}</td><td>${esc(r.name)}${r.student?' <span class="stu">'+esc(t('foreign_student'))+'</span>':''}</td>`
-    + `<td>${r.workDays}</td><td>${fmtHrs(r.actual)}</td><td>${fmtHrs(r.clock)}</td><td>${fmtHrs(r.bonus)}</td><td>${r.leave}</td></tr>`).join('');
-  const tot = data.reduce((a,r)=>{ a.wd+=r.workDays; a.ac+=r.actual; a.cl+=r.clock; a.bo+=r.bonus; a.lv+=r.leave; return a; }, {wd:0,ac:0,cl:0,bo:0,lv:0});
-  const totRow = `<tr class="c-tot"><td colspan="3">${t('st_total_row')}</td><td>${tot.wd}</td><td>${fmtHrs(tot.ac)}</td><td>${fmtHrs(tot.cl)}</td><td>${fmtHrs(tot.bo)}</td><td>${tot.lv}</td></tr>`;
-  $('#statsTable').innerHTML = `<thead><tr>${heads.map(h=>'<th>'+h+'</th>').join('')}</tr></thead>`
-    + `<tbody>${data.length ? body+totRow : '<tr><td colspan="8" class="empty">'+t('stats_none')+'</td></tr>'}</tbody>`;
+  const box = $('#statsBody');
+  if(_statsChart){ _statsChart.destroy(); _statsChart = null; }
+  if(!data.length){ box.innerHTML = '<div class="empty">'+t('stats_none')+'</div>'; return; }
+
+  const sum = data.reduce((a,r)=>{ a.actual+=r.actual; a.clock+=r.clock; a.bonus+=r.bonus; a.vio+=r.vioDays; a.o8+=r.over8; a.cs+=r.consec; a.wo+=r.weekOver; return a; }, {actual:0,clock:0,bonus:0,vio:0,o8:0,cs:0,wo:0});
+  const kpi = (label,val,cls)=> `<div class="kpi ${cls}"><div class="kpi-l">${label}</div><div class="kpi-v">${val}</div></div>`;
+  const kpis = '<div class="kpi-row">'
+    + kpi(t('dash_people'), data.length, 'k-blue')
+    + kpi(t('bh_actual'), fmtHrs(sum.actual), 'k-slate')
+    + kpi(t('bh_clock'), fmtHrs(sum.clock), 'k-green')
+    + kpi(t('bh_bonus'), fmtHrs(sum.bonus), 'k-amber')
+    + kpi(t('dash_vio_days'), sum.vio, 'k-red')
+    + '</div>';
+
+  const vio = `<div class="dash-card"><div class="dash-h">${t('dash_vio_title')}</div><div class="vio-row">`
+    + `<div class="vio"><span class="vio-n">${sum.o8}</span>${t('vio_over8')} <span class="vio-u">${t('unit_days')}</span></div>`
+    + `<div class="vio"><span class="vio-n">${sum.cs}</span>${t('vio_consec')} <span class="vio-u">${t('unit_days')}</span></div>`
+    + `<div class="vio"><span class="vio-n">${sum.wo}</span>${t('vio_week')} <span class="vio-u">${t('unit_weeks')}</span></div>`
+    + `</div></div>`;
+
+  const chart = `<div class="dash-card"><div class="dash-h">${t('dash_chart')}</div><div class="chart-wrap"><canvas id="statsChart"></canvas></div></div>`;
+
+  const heads = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('st_workdays'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('st_vio'),t('st_leavedays')];
+  const rowsHtml = data.map(r => `<tr><td>${esc(r.unit)}</td><td>${esc(r.emp)}</td><td>${esc(r.name)}${r.student?' <span class="stu">'+esc(t('foreign_student'))+'</span>':''}</td><td>${r.workDays}</td><td>${fmtHrs(r.actual)}</td><td>${fmtHrs(r.clock)}</td><td>${fmtHrs(r.bonus)}</td><td>${r.vioDays?('<b class="over-n">'+r.vioDays+'</b>'):'0'}</td><td>${r.leave}</td></tr>`).join('');
+  const table = `<div class="dash-card"><table class="cmp-table"><thead><tr>${heads.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+
+  let stuHtml = '';
+  const students = data.filter(r=>r.student);
+  if(students.length){
+    const weeks = Array.from(new Set([].concat(...students.map(r=>Object.keys(r.weeks))))).sort();
+    if(weeks.length){
+      const wh = `<th>${t('bh_name')}</th>` + weeks.map(w=>`<th>${w.slice(5)}</th>`).join('');
+      const wb = students.map(r=> `<tr><td>${esc(r.name)}</td>` + weeks.map(w=>{ const mins=r.weeks[w]||0; const h=mins/60; return `<td class="${h>20?'wk-over':''}">${mins?fmtHrs(mins):''}</td>`; }).join('') + `</tr>`).join('');
+      stuHtml = `<div class="dash-card"><div class="dash-h">${t('dash_student_week')}（${t('st_week')}）</div><table class="cmp-table"><thead><tr>${wh}</tr></thead><tbody>${wb}</tbody></table></div>`;
+    }
+  }
+
+  box.innerHTML = kpis + vio + chart + table + stuHtml;
+
+  if(typeof Chart !== 'undefined'){
+    _statsChart = new Chart($('#statsChart'), {
+      type:'bar',
+      data:{ labels:data.map(r=>r.name), datasets:[
+        { label:t('bh_clock'), data:data.map(r=>Math.round(r.clock/60*10)/10), backgroundColor:'#2f6fed' },
+        { label:t('bh_bonus'), data:data.map(r=>Math.round(r.bonus/60*10)/10), backgroundColor:'#d64545' }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{stacked:true}, y:{stacked:true, beginAtZero:true} }, plugins:{ legend:{position:'top'} } }
+    });
+  }
 }
 $('#statsBtn').onclick = ()=>{ const r = monthRange(curDate); $('#statsFrom').value=r[0]; $('#statsTo').value=r[1]; statsOpen=true; $('#statsView').hidden=false; renderStats(); };
 $('#statsBack').onclick = ()=>{ statsOpen=false; $('#statsView').hidden=true; };

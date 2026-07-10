@@ -218,6 +218,24 @@ body:not(.authed) .legend{ display:none; }
 .cmp-table tr.c-tot td{ font-weight:600; background:#f2f4f7; border-top:2px solid var(--line-strong); }
 .stu{ font-size:11px; background:#eef; color:#3a3aa0; border-radius:10px; padding:1px 7px; margin-left:4px; }
 
+/* 統計儀表板 */
+.dash{ display:flex; flex-direction:column; gap:16px; padding:4px 0 24px; }
+.kpi-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.kpi{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; border-left:4px solid var(--line-strong); }
+.kpi-l{ font-size:13px; color:var(--muted); }
+.kpi-v{ font-size:28px; font-weight:700; margin-top:4px; line-height:1.1; }
+.kpi.k-blue{ border-left-color:#2f6fed; } .kpi.k-green{ border-left-color:#0f9d58; }
+.kpi.k-amber{ border-left-color:#e0a531; } .kpi.k-red{ border-left-color:#d64545; } .kpi.k-slate{ border-left-color:#64748b; }
+.dash-card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto; }
+.dash-h{ font-weight:600; margin-bottom:12px; }
+.vio-row{ display:flex; gap:28px; flex-wrap:wrap; }
+.vio{ font-size:14px; color:var(--muted); }
+.vio-n{ font-size:24px; font-weight:700; color:var(--ink); margin-right:6px; }
+.vio-u{ font-size:12px; }
+.chart-wrap{ height:300px; position:relative; }
+.over-n{ color:#b42318; }
+.wk-over{ background:#fdecec; color:#b42318; font-weight:600; }
+
 .day-cell{ gap:6px; }
 .day-cell .who{ flex:1; }
 .day-cell .nm{ font-weight:600; white-space:nowrap; }
