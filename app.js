@@ -98,11 +98,23 @@ function applyCloudSnapshot(d){
   (d.shifts||[]).forEach(s => { if(!sched[s.date]) sched[s.date] = {}; sched[s.date][s.personId] = { work:s.work||[], off:s.off||[] }; });
   state.schedule = sched;
   usersList = d.users || [];
-  if(monthOpen) renderMonth();
-  else if(compareOpen) renderCompare();
-  else renderAll();
+  scheduleRender();
 }
 window.applyCloudSnapshot = applyCloudSnapshot;
+
+/* 雲端快照可能連續進來（例如整月套用一次寫很多筆），用去抖動避免反覆重繪 */
+let _renderPending = false;
+function scheduleRender(){
+  if(_renderPending) return;
+  _renderPending = true;
+  requestAnimationFrame(() => {
+    _renderPending = false;
+    if($('#userModal') && !$('#userModal').hidden) renderUserMgmt();
+    if(monthOpen) renderMonth();
+    else if(compareOpen) renderCompare();
+    else renderAll();
+  });
+}
 
 /* 由 Firebase 模組呼叫：設定登入者權限 */
 function setAccess(a){
@@ -411,9 +423,9 @@ function monthDates(){
 }
 
 function renderMonth(){
-  const p = (state.people[curUnit] || []).find(x => x.id === monthCtx.personId);
+  const p = findPerson(monthCtx.personId);
   if(!p){ closeMonthView(); return; }
-  const unit = UNITS.find(u => u.id === curUnit);
+  const unit = UNITS.find(u => u.id === p.unitId) || UNITS.find(u => u.id === curUnit);
   $('#mvTitle').textContent = `${p.name}（${p.empNo}）· ${unit.name}`;
   $('#mvMonth').textContent = `${monthCtx.y} 年 ${pad(monthCtx.m+1)} 月`;
   renderMvTemplates();
@@ -590,7 +602,7 @@ $('#copyGo').onclick = ()=>{
   const src = $('#copySrc').value;
   if(!src){ showErr('#copyErr','請選擇來源日期。'); return; }
   if(src===curDate){ showErr('#copyErr','來源與目標是同一天。'); return; }
-  const units = $('#copyAllUnits').checked ? UNITS.map(u=>u.id) : [curUnit];
+  const units = $('#copyAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   units.forEach(uid=>{
     (state.people[uid]||[]).forEach(p=>{
       setDay(curDate, p.id, cloneDay(getDay(src, p.id)));
@@ -638,7 +650,7 @@ $('#expGo').onclick = ()=>{
   const from = $('#expFrom').value, to = $('#expTo').value;
   if(!from || !to){ showErr('#expErr','請選擇起訖日期。'); return; }
   if(to < from){ showErr('#expErr','結束日期不能早於起始日期。'); return; }
-  const unitIds = $('#expAllUnits').checked ? UNITS.map(u=>u.id) : [curUnit];
+  const unitIds = $('#expAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   const { rows, warns } = buildRows(from, to, unitIds);
   if(rows.length===0){ showErr('#expErr','這個範圍沒有可匯出的班表。'); return; }
   if(typeof XLSX === 'undefined'){ showErr('#expErr','Excel 元件未載入（需連線）。可改用本機網路後重試。'); return; }
