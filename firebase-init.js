@@ -24,9 +24,11 @@ const provider = new GoogleAuthProvider();
 const toDocs = a => (a || []).map(x => ({ s:x[0], e:x[1] }));
 const fromDocs = a => (a || []).map(o => [o.s, o.e]);
 
+const tt = (k, d) => (window.t ? window.t(k) : d);
+
 // 提供給 app.js 的寫入 API
 window.SB = {
-  signIn(){ return signInWithPopup(auth, provider).catch(e => alert("登入失敗：" + e.message)); },
+  signIn(){ return signInWithPopup(auth, provider).catch(e => alert(tt('login_fail','登入失敗：') + e.message)); },
   signOut(){ return signOut(auth); },
   writeShift(date, personId, unitId, day){
     const ref = doc(db, "shifts", date + "__" + personId);
@@ -36,11 +38,11 @@ window.SB = {
       .catch(e => console.warn("writeShift", e));
   },
   deleteShift(date, personId){ return deleteDoc(doc(db, "shifts", date + "__" + personId)).catch(()=>{}); },
-  writePerson(p){ return setDoc(doc(db, "people", p.id), { unitId:p.unitId, empNo:p.empNo, name:p.name }).catch(e=>alert("儲存人員失敗："+e.message)); },
+  writePerson(p){ return setDoc(doc(db, "people", p.id), { unitId:p.unitId, empNo:p.empNo, name:p.name }).catch(e=>alert(tt('save_person_fail','儲存人員失敗：')+e.message)); },
   deletePerson(id){ return deleteDoc(doc(db, "people", id)).catch(e=>console.warn(e)); },
   writeTemplate(t){ return setDoc(doc(db, "templates", t.id), { name:t.name, start:t.start, end:t.end }).catch(e=>console.warn(e)); },
   deleteTemplate(id){ return deleteDoc(doc(db, "templates", id)).catch(e=>console.warn(e)); },
-  writeUser(email, data){ return setDoc(doc(db, "users", email.toLowerCase()), data).catch(e=>alert("儲存使用者失敗："+e.message)); },
+  writeUser(email, data){ return setDoc(doc(db, "users", email.toLowerCase()), data).catch(e=>alert(tt('um_save_fail','儲存使用者失敗：')+e.message)); },
   deleteUser(email){ return deleteDoc(doc(db, "users", email.toLowerCase())).catch(e=>console.warn(e)); },
 };
 
@@ -83,7 +85,7 @@ onAuthStateChanged(auth, async (user) => {
     });
     startListeners();
   }catch(e){
-    alert("讀取權限失敗：" + e.message);
+    alert(tt('access_fail','讀取權限失敗：') + e.message);
     window.onSignedOut && window.onSignedOut();
   }
 });

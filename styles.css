@@ -47,7 +47,8 @@ body:not(.authed) .legend{ display:none; }
 .date-nav{ display:flex; align-items:center; gap:8px; }
 .date-nav input[type=date]{ padding:6px 8px; border:1px solid var(--line-strong); border-radius:8px; font-size:14px; }
 .weekday{ color:var(--muted); font-weight:600; min-width:44px; }
-.top-actions{ margin-left:auto; }
+.top-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.lang-sel{ padding:6px 8px; border:1px solid var(--line-strong); border-radius:8px; font-size:13px; background:#fff; }
 
 /* buttons */
 .btn{ cursor:pointer; border:1px solid var(--line-strong); background:#fff; color:var(--ink);

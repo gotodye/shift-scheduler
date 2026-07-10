@@ -10,38 +10,52 @@
 <body>
 
 <!-- 登入 / 權限 gate -->
-<div class="gate" id="bootView"><div class="gate-box"><div class="spin"></div><p>載入中…</p></div></div>
+<div class="gate" id="bootView"><div class="gate-box"><div class="spin"></div><p data-i18n="loading">載入中…</p></div></div>
 <div class="gate" id="loginView" hidden>
   <div class="gate-box">
-    <div class="brand big"><span class="dot"></span> 排班系統</div>
-    <p class="muted">請使用公司授權的 Google 帳號登入。</p>
-    <button id="loginBtn" class="btn primary lg">使用 Google 登入</button>
+    <div class="brand big"><span class="dot"></span> <span data-i18n="app_title">排班系統</span></div>
+    <p class="muted" data-i18n="login_hint">請使用公司授權的 Google 帳號登入。</p>
+    <button id="loginBtn" class="btn primary lg" data-i18n="login_btn">使用 Google 登入</button>
+    <div style="margin-top:16px;">
+      <select class="lang-sel" title="Language">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+        <option value="vi">Tiếng Việt</option>
+        <option value="th">ไทย</option>
+      </select>
+    </div>
   </div>
 </div>
 <div class="gate" id="noAccessView" hidden>
   <div class="gate-box">
-    <h1>沒有存取權限</h1>
-    <p class="muted">你的帳號 <b id="naEmail"></b> 尚未被授權，請聯絡管理員開通。</p>
-    <button id="signoutBtn2" class="btn ghost">換帳號登入</button>
+    <h1 data-i18n="noaccess_title">沒有存取權限</h1>
+    <p class="muted" id="naDesc"></p>
+    <button id="signoutBtn2" class="btn ghost" data-i18n="switch_account">換帳號登入</button>
   </div>
 </div>
 
 <header class="topbar">
-  <div class="brand"><span class="dot"></span> 排班系統</div>
+  <div class="brand"><span class="dot"></span> <span data-i18n="app_title">排班系統</span></div>
   <div class="date-nav">
-    <button id="prevDay" class="btn icon" title="前一天">‹</button>
+    <button id="prevDay" class="btn icon" data-i18n-title="prev_day" title="前一天">‹</button>
     <input type="date" id="datePick">
-    <button id="nextDay" class="btn icon" title="後一天">›</button>
-    <button id="todayBtn" class="btn ghost">今天</button>
+    <button id="nextDay" class="btn icon" data-i18n-title="next_day" title="後一天">›</button>
+    <button id="todayBtn" class="btn ghost" data-i18n="today">今天</button>
     <span id="weekday" class="weekday"></span>
   </div>
   <div class="top-actions">
+    <select id="langSel" class="lang-sel" title="Language">
+      <option value="zh">中文</option>
+      <option value="en">English</option>
+      <option value="vi">Tiếng Việt</option>
+      <option value="th">ไทย</option>
+    </select>
     <input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
-    <button id="compareBtn" class="btn ghost">上傳打卡比對</button>
-    <button id="exportBtn" class="btn primary">匯出打卡檔</button>
+    <button id="compareBtn" class="btn ghost" data-i18n="compare_upload">上傳打卡比對</button>
+    <button id="exportBtn" class="btn primary" data-i18n="export">匯出打卡檔</button>
     <span id="userChip" class="user-chip"></span>
-    <button id="userMgmtBtn" class="btn ghost" hidden>使用者</button>
-    <button id="signoutBtn" class="btn ghost">登出</button>
+    <button id="userMgmtBtn" class="btn ghost" data-i18n="users" hidden>使用者</button>
+    <button id="signoutBtn" class="btn ghost" data-i18n="signout">登出</button>
   </div>
 </header>
 
@@ -49,20 +63,20 @@
 
 <section class="toolbar">
   <div class="tpl-area">
-    <span class="tb-label">班別範本</span>
+    <span class="tb-label" data-i18n="tpl_label">班別範本</span>
     <div class="tpl-chips" id="tplChips"></div>
-    <button id="manageTpl" class="btn ghost sm">管理範本</button>
+    <button id="manageTpl" class="btn ghost sm" data-i18n="manage_tpl">管理範本</button>
   </div>
   <div class="brush">
-    <span class="tb-label">筆刷</span>
-    <button class="brush-btn active" data-brush="work">上班</button>
-    <button class="brush-btn" data-brush="off">休假</button>
+    <span class="tb-label" data-i18n="brush">筆刷</span>
+    <button class="brush-btn active" data-brush="work" data-i18n="work">上班</button>
+    <button class="brush-btn" data-brush="off" data-i18n="off">休假</button>
   </div>
   <div class="tool-btns">
-    <button id="applyAll" class="btn ghost sm" disabled>套用範本到全組</button>
-    <button id="copyDay" class="btn ghost sm">複製某日</button>
-    <button id="addPerson" class="btn ghost sm">＋ 新增人員</button>
-    <button id="clearDay" class="btn ghost sm danger-text">清空當日</button>
+    <button id="applyAll" class="btn ghost sm" data-i18n="apply_all" disabled>套用範本到全組</button>
+    <button id="copyDay" class="btn ghost sm" data-i18n="copy_day">複製某日</button>
+    <button id="addPerson" class="btn ghost sm" data-i18n="add_person">＋ 新增人員</button>
+    <button id="clearDay" class="btn ghost sm danger-text" data-i18n="clear_day">清空當日</button>
   </div>
 </section>
 
@@ -73,57 +87,57 @@
 </main>
 
 <footer class="legend">
-  <span><b>拖拉空白</b>＝建立班別</span>
-  <span><b>拖曳整條</b>＝調動時段</span>
-  <span><b>拉兩端</b>＝改上下班</span>
-  <span><b>點區塊</b>＝編輯/刪除/改類型</span>
-  <span><b>筆刷休假</b>＝拖出某時段休假</span>
-  <span><b>休</b>＝整日休假</span>
-  <span><b>點姓名 / 月</b>＝進入整月排班</span>
+  <span data-i18n="legend_drag"></span>
+  <span data-i18n="legend_move"></span>
+  <span data-i18n="legend_resize"></span>
+  <span data-i18n="legend_edit"></span>
+  <span data-i18n="legend_brushoff"></span>
+  <span data-i18n="legend_full"></span>
+  <span data-i18n="legend_month"></span>
 </footer>
 
 <!-- 整月模式 overlay -->
 <div class="month-view" id="monthView" hidden>
   <div class="mv-head">
-    <button id="mvBack" class="btn ghost">← 返回日檢視</button>
+    <button id="mvBack" class="btn ghost" data-i18n="mv_back">← 返回日檢視</button>
     <span class="mv-title" id="mvTitle"></span>
-    <button id="mvEdit" class="btn ghost sm">編輯人員</button>
+    <button id="mvEdit" class="btn ghost sm" data-i18n="edit_person">編輯人員</button>
     <div class="mv-monthnav">
-      <button id="mvPrev" class="btn icon" title="上個月">‹</button>
+      <button id="mvPrev" class="btn icon" data-i18n-title="prev_month" title="上個月">‹</button>
       <span id="mvMonth" class="mv-month"></span>
-      <button id="mvNext" class="btn icon" title="下個月">›</button>
+      <button id="mvNext" class="btn icon" data-i18n-title="next_month" title="下個月">›</button>
     </div>
   </div>
   <div class="mv-toolbar">
-    <span class="tb-label">班別範本</span>
+    <span class="tb-label" data-i18n="tpl_label">班別範本</span>
     <div class="tpl-chips" id="mvTplChips"></div>
     <div class="brush">
-      <span class="tb-label">筆刷</span>
-      <button class="brush-btn active" data-brush="work">上班</button>
-      <button class="brush-btn" data-brush="off">休假</button>
+      <span class="tb-label" data-i18n="brush">筆刷</span>
+      <button class="brush-btn active" data-brush="work" data-i18n="work">上班</button>
+      <button class="brush-btn" data-brush="off" data-i18n="off">休假</button>
     </div>
     <div class="mv-tools">
-      <button id="mvApplyEvery" class="btn ghost sm" disabled>套用到整月每天</button>
-      <button id="mvApplyWeekday" class="btn ghost sm" disabled>只套用平日（一~五）</button>
-      <button id="mvWeekendLeave" class="btn ghost sm">週末設休假</button>
-      <button id="mvClear" class="btn ghost sm danger-text">清空整月</button>
+      <button id="mvApplyEvery" class="btn ghost sm" data-i18n="apply_every" disabled>套用到整月每天</button>
+      <button id="mvApplyWeekday" class="btn ghost sm" data-i18n="apply_weekday" disabled>只套用平日（一~五）</button>
+      <button id="mvWeekendLeave" class="btn ghost sm" data-i18n="weekend_leave">週末設休假</button>
+      <button id="mvClear" class="btn ghost sm danger-text" data-i18n="clear_month">清空整月</button>
     </div>
   </div>
   <div class="mv-grid-wrap"><div class="grid" id="monthGrid"></div></div>
-  <div class="mv-hint">操作與日檢視相同：拖拉建立班別、拖曳整條調動、拉兩端改長短、點班別編輯／刪除、「休」標記無法上班。</div>
+  <div class="mv-hint" data-i18n="mv_hint"></div>
 </div>
 
 <!-- 打卡比對結果 overlay -->
 <div class="month-view" id="compareView" hidden>
   <div class="mv-head">
-    <button id="cmpBack" class="btn ghost">← 返回</button>
-    <span class="mv-title">打卡比對結果</span>
-    <label class="cmp-opt">容許誤差(分)
+    <button id="cmpBack" class="btn ghost" data-i18n="cmp_back">← 返回</button>
+    <span class="mv-title" data-i18n="cmp_title">打卡比對結果</span>
+    <label class="cmp-opt"><span data-i18n="cmp_grace">容許誤差(分)</span>
       <input type="number" id="cmpGrace" value="5" min="0" step="1">
     </label>
-    <label class="cmp-opt"><input type="checkbox" id="cmpOnlyIssues"> 只看異常</label>
+    <label class="cmp-opt"><input type="checkbox" id="cmpOnlyIssues"> <span data-i18n="cmp_only">只看異常</span></label>
     <div class="mv-monthnav">
-      <button id="cmpExport" class="btn ghost sm">匯出差異清單</button>
+      <button id="cmpExport" class="btn ghost sm" data-i18n="cmp_export">匯出差異清單</button>
     </div>
   </div>
   <div class="cmp-summary" id="cmpSummary"></div>
@@ -134,36 +148,36 @@
 <div class="modal-mask" id="personModal" hidden>
   <div class="modal">
     <h3 id="personModalTitle">新增人員</h3>
-    <label>工號 <span class="req">*</span><input id="pmEmpNo" placeholder="例：A12345"></label>
-    <label>姓名 <span class="req">*</span><input id="pmName" placeholder="例：王小明"></label>
+    <label><span data-i18n="empno">工號</span> <span class="req">*</span><input id="pmEmpNo" data-i18n-ph="empno_ph" placeholder="例：A12345"></label>
+    <label><span data-i18n="name">姓名</span> <span class="req">*</span><input id="pmName" data-i18n-ph="name_ph" placeholder="例：王小明"></label>
     <p class="err" id="pmErr" hidden></p>
     <div class="modal-actions">
-      <button class="btn ghost" data-close>取消</button>
-      <button class="btn primary" id="pmSave">儲存</button>
+      <button class="btn ghost" data-close data-i18n="cancel">取消</button>
+      <button class="btn primary" id="pmSave" data-i18n="save">儲存</button>
     </div>
   </div>
 </div>
 
-<!-- 班別編輯 modal -->
+<!-- 區塊編輯 modal -->
 <div class="modal-mask" id="segModal" hidden>
   <div class="modal">
-    <h3>編輯區塊</h3>
-    <label>類型
+    <h3 data-i18n="seg_title">編輯區塊</h3>
+    <label><span data-i18n="type">類型</span>
       <select id="segType">
-        <option value="work">上班</option>
-        <option value="off">休假 / 不可上班</option>
+        <option value="work" data-i18n="opt_work">上班</option>
+        <option value="off" data-i18n="opt_off">休假 / 不可上班</option>
       </select>
     </label>
     <div class="time-row">
-      <label>開始 <select id="segStart"></select></label>
-      <label>結束 <select id="segEnd"></select></label>
+      <label><span data-i18n="start">開始</span> <select id="segStart"></select></label>
+      <label><span data-i18n="end">結束</span> <select id="segEnd"></select></label>
     </div>
     <p class="err" id="segErr" hidden></p>
     <div class="modal-actions">
-      <button class="btn danger" id="segDelete">刪除此段</button>
+      <button class="btn danger" id="segDelete" data-i18n="delete_seg">刪除此段</button>
       <span style="flex:1"></span>
-      <button class="btn ghost" data-close>取消</button>
-      <button class="btn primary" id="segSave">儲存</button>
+      <button class="btn ghost" data-close data-i18n="cancel">取消</button>
+      <button class="btn primary" id="segSave" data-i18n="save">儲存</button>
     </div>
   </div>
 </div>
@@ -171,17 +185,17 @@
 <!-- 範本管理 modal -->
 <div class="modal-mask" id="tplModal" hidden>
   <div class="modal">
-    <h3>班別範本</h3>
+    <h3 data-i18n="tpl_title">班別範本</h3>
     <div id="tplList" class="tpl-list"></div>
     <div class="tpl-add">
-      <input id="tplName" placeholder="名稱，如「早班」" style="flex:1">
+      <input id="tplName" data-i18n-ph="tpl_name_ph" placeholder="名稱，如「早班」" style="flex:1">
       <select id="tplStart"></select>
       <span>~</span>
       <select id="tplEnd"></select>
-      <button class="btn ghost sm" id="tplAdd">新增</button>
+      <button class="btn ghost sm" id="tplAdd" data-i18n="add">新增</button>
     </div>
     <div class="modal-actions">
-      <button class="btn primary" data-close>完成</button>
+      <button class="btn primary" data-close data-i18n="done">完成</button>
     </div>
   </div>
 </div>
@@ -189,14 +203,14 @@
 <!-- 複製某日 modal -->
 <div class="modal-mask" id="copyModal" hidden>
   <div class="modal">
-    <h3>複製某日班表</h3>
-    <p class="muted">把來源日期「<span id="copyUnitName"></span>」整組班表，覆蓋到目前選定的日期。</p>
-    <label>來源日期 <input type="date" id="copySrc"></label>
-    <label class="chk"><input type="checkbox" id="copyAllUnits"> 套用到全部單位（否則只複製目前單位）</label>
+    <h3 data-i18n="copy_title">複製某日班表</h3>
+    <p class="muted" data-i18n="copy_desc">把來源日期整組班表，覆蓋到目前選定的日期。</p>
+    <label><span data-i18n="src_date">來源日期</span> <input type="date" id="copySrc"></label>
+    <label class="chk"><input type="checkbox" id="copyAllUnits"> <span data-i18n="copy_all_units">套用到全部單位（否則只複製目前單位）</span></label>
     <p class="err" id="copyErr" hidden></p>
     <div class="modal-actions">
-      <button class="btn ghost" data-close>取消</button>
-      <button class="btn primary" id="copyGo">複製</button>
+      <button class="btn ghost" data-close data-i18n="cancel">取消</button>
+      <button class="btn primary" id="copyGo" data-i18n="copy">複製</button>
     </div>
   </div>
 </div>
@@ -204,17 +218,17 @@
 <!-- 匯出 modal -->
 <div class="modal-mask" id="exportModal" hidden>
   <div class="modal">
-    <h3>匯出阿波羅打卡檔</h3>
+    <h3 data-i18n="exp_title">匯出阿波羅打卡檔</h3>
     <div class="time-row">
-      <label>起始日期 <input type="date" id="expFrom"></label>
-      <label>結束日期 <input type="date" id="expTo"></label>
+      <label><span data-i18n="from_date">起始日期</span> <input type="date" id="expFrom"></label>
+      <label><span data-i18n="to_date">結束日期</span> <input type="date" id="expTo"></label>
     </div>
-    <label class="chk"><input type="checkbox" id="expAllUnits" checked> 匯出全部單位（否則只匯出目前單位）</label>
-    <p class="muted small">規則：有排班→上班(W0001)+時段；中間空檔自動轉成休息時間；標記休假者→休假日(H0001)；沒排也沒標休假者不輸出。</p>
+    <label class="chk"><input type="checkbox" id="expAllUnits" checked> <span data-i18n="exp_all_units">匯出全部單位（否則只匯出目前單位）</span></label>
+    <p class="muted small" data-i18n="exp_rule">規則：有排班→上班(W0001)+時段；中間空檔自動轉成休息時間；標記休假者→休假日(H0001)；沒排也沒標休假者不輸出。</p>
     <p class="err" id="expErr" hidden></p>
     <div class="modal-actions">
-      <button class="btn ghost" data-close>取消</button>
-      <button class="btn primary" id="expGo">產生 Excel</button>
+      <button class="btn ghost" data-close data-i18n="cancel">取消</button>
+      <button class="btn primary" id="expGo" data-i18n="gen_excel">產生 Excel</button>
     </div>
   </div>
 </div>
@@ -222,19 +236,20 @@
 <!-- 使用者管理 modal（管理員） -->
 <div class="modal-mask" id="userModal" hidden>
   <div class="modal">
-    <h3>使用者管理</h3>
+    <h3 data-i18n="um_title">使用者管理</h3>
     <div id="umList" class="tpl-list"></div>
     <div style="border-top:1px solid var(--line); padding-top:12px;">
-      <label>新增 / 更新使用者 Email <input id="umEmail" placeholder="someone@gmail.com"></label>
-      <label class="chk"><input type="checkbox" id="umAdmin"> 設為管理員（可管理所有單位與使用者）</label>
-      <div class="muted small" style="margin:8px 0 4px;">或勾選可編輯的單位：</div>
+      <label><span data-i18n="um_email">新增 / 更新使用者 Email</span> <input id="umEmail" placeholder="someone@gmail.com"></label>
+      <label class="chk"><input type="checkbox" id="umAdmin"> <span data-i18n="um_admin">設為管理員（可管理所有單位與使用者）</span></label>
+      <div class="muted small" style="margin:8px 0 4px;" data-i18n="um_units_hint">或勾選可編輯的單位：</div>
       <div id="umUnits" class="um-units"></div>
-      <button class="btn ghost sm" id="umAdd" style="margin-top:10px;">新增 / 更新</button>
+      <button class="btn ghost sm" id="umAdd" style="margin-top:10px;" data-i18n="um_add">新增 / 更新</button>
     </div>
-    <div class="modal-actions"><button class="btn primary" data-close>完成</button></div>
+    <div class="modal-actions"><button class="btn primary" data-close data-i18n="done">完成</button></div>
   </div>
 </div>
 
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 <script type="module" src="firebase-init.js"></script>
 </body>

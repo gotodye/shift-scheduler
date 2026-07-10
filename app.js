@@ -38,7 +38,7 @@ function slotToTime(slot){ return pad(Math.floor(slot/2)) + ':' + (slot%2 ? '30'
 function timeToSlot(t){ const [h,m] = t.split(':').map(Number); return h*2 + (m>=30?1:0); }
 function todayKey(){ return dateKey(new Date()); }
 function dateKey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-function weekdayCh(key){ const d=new Date(key+'T00:00:00'); return '（'+'日一二三四五六'[d.getDay()]+'）'; }
+function weekdayCh(key){ const d=new Date(key+'T00:00:00'); return '（'+dowLabel(d.getDay())+'）'; }
 function apolloDate(key){ return key.replace(/-/g,'/'); }
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
@@ -120,7 +120,7 @@ function scheduleRender(){
 function setAccess(a){
   myEmail = a.email; isAdmin = a.admin; myUnits = a.units || [];
   if(myUnits.indexOf(curUnit) < 0 && !isAdmin){ curUnit = myUnits[0] || 'ID'; }
-  const chip = $('#userChip'); if(chip){ chip.textContent = (a.name||a.email) + (isAdmin?'（管理員）':''); }
+  const chip = $('#userChip'); if(chip){ chip.textContent = (a.name||a.email) + (isAdmin?t('admin_paren'):''); }
   $('#userMgmtBtn').hidden = !isAdmin;
   $('#bootView').hidden = true; $('#loginView').hidden = true; $('#noAccessView').hidden = true;
   document.body.classList.add('authed');
@@ -128,7 +128,7 @@ function setAccess(a){
 }
 window.setAccess = setAccess;
 window.onSignedOut = function(){ document.body.classList.remove('authed'); $('#bootView').hidden = true; $('#loginView').hidden = false; $('#noAccessView').hidden = true; };
-window.onNoAccess = function(user){ document.body.classList.remove('authed'); $('#bootView').hidden = true; $('#loginView').hidden = true; $('#noAccessView').hidden = false; $('#naEmail').textContent = user.email || ''; };
+window.onNoAccess = function(user){ document.body.classList.remove('authed'); $('#bootView').hidden = true; $('#loginView').hidden = true; $('#noAccessView').hidden = false; $('#naDesc').textContent = t('noaccess_desc', { email: user.email || '' }); };
 
 /* 合併重疊/相鄰區塊，保留中間空檔 */
 function normalize(segs){
@@ -159,7 +159,7 @@ function renderTabs(){
     const cnt = (state.people[u.id]||[]).length;
     const b = document.createElement('button');
     b.className = 'unit-tab' + (u.id===curUnit?' active':'');
-    b.innerHTML = `${u.name}<span class="cnt">${cnt}</span>`;
+    b.innerHTML = `${unitName(u.id)}<span class="cnt">${cnt}</span>`;
     b.onclick = () => { curUnit = u.id; save(); renderAll(); };
     el.appendChild(b);
   });
@@ -179,9 +179,9 @@ function renderTemplates(){
 function updateBrushHint(){
   const h = $('#brushHint');
   if(activeTpl){
-    const t = state.templates.find(x=>x.id===activeTpl);
+    const tp = state.templates.find(x=>x.id===activeTpl);
     h.hidden = false;
-    h.textContent = `已選範本「${t.name} ${t.start}–${t.end}」：點各列左側 ⤵ 套用給該人，或按上方「套用範本到全組」。再點一次範本可取消。`;
+    h.textContent = t('brush_hint', { name:tp.name, start:tp.start, end:tp.end });
   } else h.hidden = true;
 }
 
@@ -191,7 +191,7 @@ function renderGrid(){
   const vis = visibleUnits();
   if(vis.length && !vis.some(u=>u.id===curUnit)) curUnit = vis[0].id;
   const grid = $('#grid'); grid.innerHTML = '';
-  if(!vis.length){ grid.innerHTML = '<div class="empty">尚未指派可編輯的單位，請聯絡管理員。</div>'; return; }
+  if(!vis.length){ grid.innerHTML = '<div class="empty">'+esc(t('no_units'))+'</div>'; return; }
 
   const head = document.createElement('div'); head.className = 'time-header';
   const sp = document.createElement('div'); sp.className = 'th-spacer';
@@ -201,13 +201,13 @@ function renderGrid(){
 
   const ppl = state.people[curUnit] || [];
   if(ppl.length===0){
-    const e = document.createElement('div'); e.className='empty'; e.textContent='這個單位還沒有人員，點下方「新增人員」開始。';
+    const e = document.createElement('div'); e.className='empty'; e.textContent=t('empty_no_people');
     grid.appendChild(e);
   }
   ppl.forEach(p => grid.appendChild(personRow(p)));
 
   const ar = document.createElement('div'); ar.className='row add-row';
-  const nc = document.createElement('div'); nc.className='name-cell'; nc.textContent='＋ 新增人員';
+  const nc = document.createElement('div'); nc.className='name-cell'; nc.textContent=t('add_person');
   nc.onclick = () => openPersonModal();
   const tk = document.createElement('div'); tk.className='track';
   ar.appendChild(nc); ar.appendChild(tk); grid.appendChild(ar);
@@ -219,18 +219,18 @@ function personRow(p){
 
   const name = document.createElement('div'); name.className='name-cell';
   const applyBtn = document.createElement('button');
-  applyBtn.className='mini apply'; applyBtn.textContent='⤵'; applyBtn.title='套用選取的範本';
+  applyBtn.className='mini apply'; applyBtn.textContent='⤵'; applyBtn.title=t('title_apply_tpl');
   applyBtn.disabled = !activeTpl;
   applyBtn.onclick = (e)=>{ e.stopPropagation(); applyTemplateTo(curDate, p.id); };
   const who = document.createElement('div'); who.className='who';
   who.innerHTML = `<div class="emp">${esc(p.empNo)}</div><div class="nm">${esc(p.name)}</div>`;
-  who.style.cursor='pointer'; who.title='點姓名 → 進入整月排班';
+  who.style.cursor='pointer'; who.title=t('title_edit_person');
   who.onclick = ()=> openMonthView(p.id);
   const mvBtn = document.createElement('button');
-  mvBtn.className='mini'; mvBtn.textContent='月'; mvBtn.title='進入整月排班';
+  mvBtn.className='mini'; mvBtn.textContent=t('month_btn'); mvBtn.title=t('title_month');
   mvBtn.onclick = (e)=>{ e.stopPropagation(); openMonthView(p.id); };
   const leaveBtn = document.createElement('button');
-  leaveBtn.className='mini'+(isFullOff(day)?' on':''); leaveBtn.textContent='休'; leaveBtn.title='整日休假（再按取消）';
+  leaveBtn.className='mini'+(isFullOff(day)?' on':''); leaveBtn.textContent=t('off_short'); leaveBtn.title=t('title_full_leave');
   leaveBtn.onclick = (e)=>{ e.stopPropagation(); toggleLeave(curDate, p.id); };
   name.appendChild(applyBtn); name.appendChild(who); name.appendChild(mvBtn); name.appendChild(leaveBtn);
 
@@ -255,7 +255,7 @@ function segEl(date, personId, type, idx, seg){
   positionSeg(el, seg);
   const full = seg[0] <= 0 && seg[1] >= SLOTS;
   const lbl = type==='off'
-    ? (full ? '休假（整日）' : '休 '+slotToTime(seg[0])+'–'+slotToTime(seg[1]))
+    ? (full ? t('full_off_label') : t('off_prefix')+' '+slotToTime(seg[0])+'–'+slotToTime(seg[1]))
     : slotToTime(seg[0])+'–'+slotToTime(seg[1]);
   el.innerHTML = `<span class="lbl">${lbl}</span><span class="hd l"></span><span class="hd r"></span>`;
   el.querySelector('.hd.l').addEventListener('pointerdown', e=> startResize(e, date, personId, type, idx, 'l'));
@@ -293,7 +293,7 @@ function startPaint(ev, date, personId, track){
 function paintUpdate(){
   const a = Math.min(drag.anchor, drag.cur), b = Math.max(drag.anchor, drag.cur)+1;
   positionSeg(drag.el, [a,b]);
-  drag.el.querySelector('.lbl').textContent = (drag.type==='off'?'休 ':'')+slotToTime(a)+'–'+slotToTime(b);
+  drag.el.querySelector('.lbl').textContent = (drag.type==='off'?t('off_prefix')+' ':'')+slotToTime(a)+'–'+slotToTime(b);
 }
 function startMove(ev, date, personId, type, idx, el){
   if(ev.target.classList.contains('hd')) return;
@@ -327,7 +327,7 @@ function onDragMove(ev){
     const len = drag.orig[1]-drag.orig[0];
     let s = clamp(drag.orig[0]+dx, 0, SLOTS-len);
     positionSeg(drag.el, [s, s+len]);
-    drag.el.querySelector('.lbl').textContent = (drag.type==='off'?'休 ':'')+slotToTime(s)+'–'+slotToTime(s+len);
+    drag.el.querySelector('.lbl').textContent = (drag.type==='off'?t('off_prefix')+' ':'')+slotToTime(s)+'–'+slotToTime(s+len);
     drag._new = [s, s+len];
   } else if(drag.mode==='resize'){
     const cur = slotFromEvent(drag.track, ev);
@@ -335,7 +335,7 @@ function onDragMove(ev){
     if(drag.side==='l') s = clamp(cur, 0, e-1);
     else e = clamp(cur+1, s+1, SLOTS);
     positionSeg(drag.el, [s,e]);
-    drag.el.querySelector('.lbl').textContent = (drag.type==='off'?'休 ':'')+slotToTime(s)+'–'+slotToTime(e);
+    drag.el.querySelector('.lbl').textContent = (drag.type==='off'?t('off_prefix')+' ':'')+slotToTime(s)+'–'+slotToTime(e);
     drag._new = [s,e];
   }
 }
@@ -426,8 +426,8 @@ function renderMonth(){
   const p = findPerson(monthCtx.personId);
   if(!p){ closeMonthView(); return; }
   const unit = UNITS.find(u => u.id === p.unitId) || UNITS.find(u => u.id === curUnit);
-  $('#mvTitle').textContent = `${p.name}（${p.empNo}）· ${unit.name}`;
-  $('#mvMonth').textContent = `${monthCtx.y} 年 ${pad(monthCtx.m+1)} 月`;
+  $('#mvTitle').textContent = `${p.name}（${p.empNo}）· ${unitName(unit.id)}`;
+  $('#mvMonth').textContent = monthLabel(monthCtx.y, monthCtx.m);
   renderMvTemplates();
 
   const grid = $('#monthGrid'); grid.innerHTML = '';
@@ -444,12 +444,12 @@ function renderMonth(){
     const row = document.createElement('div'); row.className = 'row' + ((dow===0||dow===6) ? ' wk' : '');
     const dc = document.createElement('div'); dc.className = 'name-cell day-cell';
     const ab = document.createElement('button');
-    ab.className = 'mini apply'; ab.textContent = '⤵'; ab.disabled = !activeTpl; ab.title = '套用範本到這天';
+    ab.className = 'mini apply'; ab.textContent = '⤵'; ab.disabled = !activeTpl; ab.title = t('title_apply_day');
     ab.onclick = (e)=>{ e.stopPropagation(); applyTemplateTo(date, p.id); };
     const who = document.createElement('div'); who.className = 'who';
-    who.innerHTML = `<div class="nm">${pad(monthCtx.m+1)}/${dd} <span class="dow">(${'日一二三四五六'[dow]})</span></div>`;
+    who.innerHTML = `<div class="nm">${pad(monthCtx.m+1)}/${dd} <span class="dow">(${dowLabel(dow)})</span></div>`;
     const lv = document.createElement('button');
-    lv.className = 'mini' + (isFullOff(day) ? ' on' : ''); lv.textContent = '休'; lv.title = '整日休假（再按取消）';
+    lv.className = 'mini' + (isFullOff(day) ? ' on' : ''); lv.textContent = t('off_short'); lv.title = t('title_full_leave');
     lv.onclick = (e)=>{ e.stopPropagation(); toggleLeave(date, p.id); };
     dc.appendChild(ab); dc.appendChild(who); dc.appendChild(lv);
     row.appendChild(dc); row.appendChild(buildTrack(date, p.id));
@@ -491,7 +491,7 @@ function weekendLeave(){
   renderMonth();
 }
 function clearMonth(){
-  if(!confirm('確定清空這個人整個月的班表？')) return;
+  if(!confirm(t('clear_month_confirm'))) return;
   monthDates().forEach(date => setDay(date, monthCtx.personId, { work:[], off:[] }));
   renderMonth();
 }
@@ -506,7 +506,7 @@ function setBrush(t){
 let editingPerson = null;
 function openPersonModal(p){
   editingPerson = p || null;
-  $('#personModalTitle').textContent = p ? '編輯人員' : '新增人員';
+  $('#personModalTitle').textContent = p ? t('pm_edit') : t('pm_add');
   $('#pmEmpNo').value = p ? p.empNo : '';
   $('#pmName').value = p ? p.name : '';
   $('#pmErr').hidden = true;
@@ -514,12 +514,12 @@ function openPersonModal(p){
   if(p){
     if(!delBtn){
       delBtn = document.createElement('button');
-      delBtn.id='pmDelete'; delBtn.className='btn danger'; delBtn.textContent='刪除人員';
+      delBtn.id='pmDelete'; delBtn.className='btn danger'; delBtn.textContent=t('delete_person');
       $('#personModal .modal-actions').prepend(delBtn);
     }
-    delBtn.hidden=false;
+    delBtn.hidden=false; delBtn.textContent=t('delete_person');
     delBtn.onclick = ()=>{
-      if(confirm(`確定刪除「${p.name}」？此人所有班表也會移除。`)){
+      if(confirm(t('pm_confirm_del', { name:p.name }))){
         if(window.SB){
           window.SB.deletePerson(p.id);
           Object.keys(state.schedule).forEach(dt=>{ if(state.schedule[dt][p.id]) window.SB.deleteShift(dt, p.id); });
@@ -537,9 +537,9 @@ function openPersonModal(p){
 $('#pmSave').onclick = ()=>{
   const empNo = $('#pmEmpNo').value.trim();
   const name = $('#pmName').value.trim();
-  if(!empNo || !name){ showErr('#pmErr','工號與姓名皆為必填。'); return; }
+  if(!empNo || !name){ showErr('#pmErr', t('pm_err_required')); return; }
   const dup = (state.people[curUnit]||[]).some(x => x.empNo===empNo && x!==editingPerson);
-  if(dup){ showErr('#pmErr','此工號已存在於本單位。'); return; }
+  if(dup){ showErr('#pmErr', t('pm_err_dup')); return; }
   if(editingPerson){ editingPerson.empNo=empNo; editingPerson.name=name; if(window.SB) window.SB.writePerson(editingPerson); }
   else { const np={ id:pid(), unitId:curUnit, empNo, name }; state.people[curUnit].push(np); if(window.SB) window.SB.writePerson(np); }
   save(); closeModal('#personModal'); renderAll(); if(monthOpen) renderMonth();
@@ -559,7 +559,7 @@ function openSegModal(date, personId, type, idx){
 }
 $('#segSave').onclick = ()=>{
   const s = +$('#segStart').value, e = +$('#segEnd').value, newType = $('#segType').value;
-  if(e<=s){ showErr('#segErr','結束時間需晚於開始時間。'); return; }
+  if(e<=s){ showErr('#segErr', t('seg_err')); return; }
   const day = cloneDay(getDay(segCtx.date, segCtx.personId));
   day[segCtx.type].splice(segCtx.idx, 1);                 // 從原清單移除
   day[newType] = normalize([...day[newType], [s,e]]);     // 加入新類型
@@ -581,7 +581,7 @@ function renderTplModal(){
   state.templates.forEach(t=>{
     const it=document.createElement('div'); it.className='tpl-item';
     it.innerHTML=`<span class="nm">${esc(t.name)}</span><span class="tm">${t.start}–${t.end}</span>`;
-    const rm=document.createElement('button'); rm.className='rm'; rm.textContent='刪除';
+    const rm=document.createElement('button'); rm.className='rm'; rm.textContent=t('delete');
     rm.onclick=()=>{ if(window.SB) window.SB.deleteTemplate(t.id); state.templates=state.templates.filter(x=>x.id!==t.id); if(activeTpl===t.id)activeTpl=null; save(); renderTplModal(); renderTemplates(); updateBrushHint(); };
     it.appendChild(rm); list.appendChild(it);
   });
@@ -589,8 +589,8 @@ function renderTplModal(){
 $('#tplAdd').onclick = ()=>{
   const name = $('#tplName').value.trim();
   const s = +$('#tplStart').value, e = +$('#tplEnd').value;
-  if(!name){ alert('請輸入範本名稱'); return; }
-  if(e<=s){ alert('下班需晚於上班'); return; }
+  if(!name){ alert(t('tpl_err_name')); return; }
+  if(e<=s){ alert(t('tpl_err_time')); return; }
   const nt = { id:pid(), name, start:slotToTime(s), end:slotToTime(e) };
   state.templates.push(nt); if(window.SB) window.SB.writeTemplate(nt);
   $('#tplName').value='';
@@ -600,8 +600,8 @@ $('#tplAdd').onclick = ()=>{
 /* ---------- 複製某日 ---------- */
 $('#copyGo').onclick = ()=>{
   const src = $('#copySrc').value;
-  if(!src){ showErr('#copyErr','請選擇來源日期。'); return; }
-  if(src===curDate){ showErr('#copyErr','來源與目標是同一天。'); return; }
+  if(!src){ showErr('#copyErr', t('copy_err_src')); return; }
+  if(src===curDate){ showErr('#copyErr', t('copy_err_same')); return; }
   const units = $('#copyAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   units.forEach(uid=>{
     (state.people[uid]||[]).forEach(p=>{
@@ -613,7 +613,7 @@ $('#copyGo').onclick = ()=>{
 
 /* ---------- 清空當日 ---------- */
 $('#clearDay').onclick = ()=>{
-  if(!confirm(`確定清空「${UNITS.find(u=>u.id===curUnit).name}」在 ${curDate} 的所有班表？`)) return;
+  if(!confirm(t('clear_confirm', { unit:unitName(curUnit), date:curDate }))) return;
   (state.people[curUnit]||[]).forEach(p=> setDay(curDate, p.id, { work:[], off:[] }));
   renderGrid();
 };
@@ -634,7 +634,7 @@ function buildRows(from, to, unitIds){
           const off = slotToTime(work[work.length-1][1]);
           const breaks = [];
           for(let i=0;i<work.length-1;i++) breaks.push(slotToTime(work[i][1])+'~'+slotToTime(work[i+1][0]));
-          if(breaks.length>3) warns.push(`${p.name}（${apolloDate(key)}）休息時段超過 3 組，阿波羅最多 3 組。`);
+          if(breaks.length>3) warns.push(t('exp_warn_break', { name:p.name, date:apolloDate(key) }));
           rows.push([p.empNo, p.name, apolloDate(key), STATUS_WORK, SHIFT_CODE, on, off, breaks.slice(0,3).join(','), '', '', '', '', '', '', '', '', '', '']);
         } else if(isFullOff(day)){
           rows.push([p.empNo, p.name, apolloDate(key), STATUS_LEAVE, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
@@ -648,19 +648,19 @@ function buildRows(from, to, unitIds){
 }
 $('#expGo').onclick = ()=>{
   const from = $('#expFrom').value, to = $('#expTo').value;
-  if(!from || !to){ showErr('#expErr','請選擇起訖日期。'); return; }
-  if(to < from){ showErr('#expErr','結束日期不能早於起始日期。'); return; }
+  if(!from || !to){ showErr('#expErr', t('exp_err_dates')); return; }
+  if(to < from){ showErr('#expErr', t('exp_err_order')); return; }
   const unitIds = $('#expAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   const { rows, warns } = buildRows(from, to, unitIds);
-  if(rows.length===0){ showErr('#expErr','這個範圍沒有可匯出的班表。'); return; }
-  if(typeof XLSX === 'undefined'){ showErr('#expErr','Excel 元件未載入（需連線）。可改用本機網路後重試。'); return; }
+  if(rows.length===0){ showErr('#expErr', t('exp_err_empty')); return; }
+  if(typeof XLSX === 'undefined'){ showErr('#expErr', t('xlsx_missing')); return; }
   const ws = XLSX.utils.aoa_to_sheet([APOLLO_HEADER, ...rows]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '匯入檔');
   const fname = `班表匯入_${from.replace(/-/g,'')}_${to.replace(/-/g,'')}.xlsx`;
   XLSX.writeFile(wb, fname);
   closeModal('#exportModal');
-  if(warns.length) alert('已匯出，但請注意：\n' + warns.join('\n'));
+  if(warns.length) alert(t('exp_done_warn') + '\n' + warns.join('\n'));
 };
 
 /* ---------- modal 基礎 ---------- */
@@ -680,7 +680,7 @@ function shiftDate(n){ const d=new Date(curDate+'T00:00:00'); d.setDate(d.getDat
 $('#addPerson').onclick = ()=> openPersonModal();
 $('#applyAll').onclick = applyTemplateAll;
 $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
-$('#copyDay').onclick = ()=>{ $('#copyUnitName').textContent=UNITS.find(u=>u.id===curUnit).name; $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
+$('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
 $('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; showModal('#exportModal'); };
 
 $('#mvBack').onclick = closeMonthView;
@@ -717,11 +717,11 @@ function punchMin(v){
 $('#compareBtn').onclick = ()=> $('#punchFile').click();
 $('#punchFile').onchange = (e)=>{
   const f = e.target.files[0]; if(!f) return;
-  if(typeof XLSX==='undefined'){ alert('Excel 元件未載入（需連線）。'); return; }
+  if(typeof XLSX==='undefined'){ alert(t('xlsx_missing')); return; }
   const rd = new FileReader();
   rd.onload = ev => {
     try{ parsePunch(XLSX.read(new Uint8Array(ev.target.result), {type:'array'})); }
-    catch(err){ alert('讀取失敗：'+err.message); }
+    catch(err){ alert(t('xlsx_read_fail')+err.message); }
   };
   rd.readAsArrayBuffer(f);
   e.target.value = '';
@@ -730,12 +730,12 @@ $('#punchFile').onchange = (e)=>{
 function parsePunch(wb){
   const ws = wb.Sheets[wb.SheetNames[0]];
   const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-  if(!aoa.length){ alert('檔案是空的。'); return; }
+  if(!aoa.length){ alert(t('punch_empty')); return; }
   const head = aoa[0].map(x => String(x).trim());
   const col = names => { for(let i=0;i<head.length;i++){ if(names.some(n=>head[i].includes(n))) return i; } return -1; };
   const ci = { emp:col(['工號','員工編號','工號']), name:col(['姓名']), unit:col(['單位','部門']),
                date:col(['日期']), on:col(['上班時間','上班','簽到','進']), off:col(['下班時間','下班','簽退','出']) };
-  if(ci.emp<0 || ci.date<0){ alert('找不到「工號」或「日期」欄，請確認檔案格式。'); return; }
+  if(ci.emp<0 || ci.date<0){ alert(t('punch_nocol')); return; }
   lastPunches = [];
   for(let i=1;i<aoa.length;i++){
     const r = aoa[i]; if(!r) continue;
@@ -749,13 +749,13 @@ function parsePunch(wb){
       offMin: ci.off>=0 ? punchMin(r[ci.off]) : null,
     });
   }
-  if(!lastPunches.length){ alert('沒有可比對的資料列。'); return; }
+  if(!lastPunches.length){ alert(t('punch_norows')); return; }
   compareOpen = true; $('#compareView').hidden = false; renderCompare();
 }
 
 function computeCompare(grace){
   const byEmp = {};
-  UNITS.forEach(u => (state.people[u.id]||[]).forEach(p => byEmp[p.empNo] = { p, unit:u.name }));
+  UNITS.forEach(u => (state.people[u.id]||[]).forEach(p => byEmp[p.empNo] = { p, unitId:u.id }));
   const punchMap = {}; const dates = new Set();
   lastPunches.forEach(pu => { punchMap[pu.emp+'|'+pu.date] = pu; dates.add(pu.date); });
   const keys = {};
@@ -776,32 +776,32 @@ function computeCompare(grace){
     const span = w.length ? { on:w[0][0]*30, off:w[w.length-1][1]*30 } : null;
     const full = isFullOff(day);
     const name = info ? info.p.name : (punch ? punch.name : '');
-    const unit = info ? info.unit : (punch ? punch.unit : '');
+    const unit = info ? unitName(info.unitId) : (punch ? punch.unit : '');
     let status, cls;
 
-    if(!info){ status='系統查無此工號'; cls='warn'; }
+    if(!info){ status=t('st_unknown'); cls='warn'; }
     else if(span){
-      if(!punch){ status='未打卡'; cls='bad'; }
+      if(!punch){ status=t('st_nopunch'); cls='bad'; }
       else{
         const parts = [];
         const late = punch.onMin!=null ? punch.onMin - span.on : null;
         const early = punch.offMin!=null ? span.off - punch.offMin : null;
-        if(late!=null){ if(late>grace) parts.push('遲到 '+late+' 分'); else if(late < -grace) parts.push('提早上班 '+(-late)+' 分'); }
-        if(early!=null){ if(early>grace) parts.push('早退 '+early+' 分'); else if(early < -grace) parts.push('延後下班 '+(-early)+' 分'); }
-        if(!parts.length){ status='正常'; cls='ok'; }
-        else { status=parts.join('、'); cls = (late>grace || early>grace) ? 'bad' : 'warn'; }
+        if(late!=null){ if(late>grace) parts.push(t('st_late',{n:late})); else if(late < -grace) parts.push(t('st_early_in',{n:-late})); }
+        if(early!=null){ if(early>grace) parts.push(t('st_early_out',{n:early})); else if(early < -grace) parts.push(t('st_late_out',{n:-early})); }
+        if(!parts.length){ status=t('st_normal'); cls='ok'; }
+        else { status=parts.join(getLang()==='zh'?'、':', '); cls = (late>grace || early>grace) ? 'bad' : 'warn'; }
       }
     }
     else if(full){
       if(!punch) return;                       // 純休假、無打卡 → 略過
-      status='休假日出勤'; cls='bad';
+      status=t('st_leavework'); cls='bad';
     }
     else{
       if(!punch) return;
-      status='未排班出勤（加班？）'; cls='warn';
+      status=t('st_unsched'); cls='warn';
     }
     out.push({ date, emp, name, unit,
-      sched: span ? (minToHHMM(span.on)+'–'+minToHHMM(span.off)) : (full ? '整日休假' : '—'),
+      sched: span ? (minToHHMM(span.on)+'–'+minToHHMM(span.off)) : (full ? t('st_fulloff') : '—'),
       actual: punch ? ((punch.onMin!=null?minToHHMM(punch.onMin):'—')+'–'+(punch.offMin!=null?minToHHMM(punch.offMin):'—')) : '—',
       status, cls });
   });
@@ -815,24 +815,24 @@ function renderCompare(){
   const shown = $('#cmpOnlyIssues').checked ? all.filter(x=>x.cls!=='ok') : all;
   lastCompareShown = shown;
   const n = c => all.filter(x=>x.cls===c).length;
-  $('#cmpSummary').innerHTML = `共 ${all.length} 筆　`
-    + `<span class="pill ok">正常 ${n('ok')}</span> `
-    + `<span class="pill bad">異常 ${n('bad')}</span> `
-    + `<span class="pill warn">待確認 ${n('warn')}</span>`;
+  $('#cmpSummary').innerHTML = t('cmp_count',{n:all.length}) + '　'
+    + `<span class="pill ok">${t('cmp_ok')} ${n('ok')}</span> `
+    + `<span class="pill bad">${t('cmp_bad')} ${n('bad')}</span> `
+    + `<span class="pill warn">${t('cmp_warn')} ${n('warn')}</span>`;
   const body = shown.map(x =>
     `<tr class="c-${x.cls}"><td>${x.date}</td><td>${esc(x.emp)}</td><td>${esc(x.name)}</td><td>${esc(x.unit)}</td>`
     + `<td>${x.sched}</td><td>${x.actual}</td><td>${esc(x.status)}</td></tr>`).join('');
   $('#cmpTable').innerHTML =
-    '<thead><tr><th>日期</th><th>工號</th><th>姓名</th><th>單位</th><th>排班</th><th>實際打卡</th><th>判定</th></tr></thead>'
-    + '<tbody>' + (body || '<tr><td colspan="7" class="empty">沒有符合的資料</td></tr>') + '</tbody>';
+    `<thead><tr><th>${t('th_date')}</th><th>${t('th_emp')}</th><th>${t('th_name')}</th><th>${t('th_unit')}</th><th>${t('th_sched')}</th><th>${t('th_actual')}</th><th>${t('th_verdict')}</th></tr></thead>`
+    + '<tbody>' + (body || `<tr><td colspan="7" class="empty">${t('cmp_none')}</td></tr>`) + '</tbody>';
 }
 
 $('#cmpBack').onclick = ()=>{ compareOpen=false; $('#compareView').hidden=true; };
 $('#cmpGrace').oninput = ()=>{ if(compareOpen) renderCompare(); };
 $('#cmpOnlyIssues').onchange = ()=>{ if(compareOpen) renderCompare(); };
 $('#cmpExport').onclick = ()=>{
-  if(!lastCompareShown.length){ alert('沒有資料可匯出。'); return; }
-  const header = ['日期','工號','姓名','單位','排班','實際打卡','判定'];
+  if(!lastCompareShown.length){ alert(t('cmp_no_export')); return; }
+  const header = [t('th_date'),t('th_emp'),t('th_name'),t('th_unit'),t('th_sched'),t('th_actual'),t('th_verdict')];
   const aoa = [header, ...lastCompareShown.map(x=>[x.date,x.emp,x.name,x.unit,x.sched,x.actual,x.status])];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
@@ -848,26 +848,35 @@ $('#userMgmtBtn').onclick = ()=>{ renderUserMgmt(); showModal('#userModal'); };
 
 function renderUserMgmt(){
   // 單位勾選清單
-  const unitBoxes = UNITS.map(u => `<label class="uchk"><input type="checkbox" value="${u.id}"> ${u.name}</label>`).join('');
+  const unitBoxes = UNITS.map(u => `<label class="uchk"><input type="checkbox" value="${u.id}"> ${esc(unitName(u.id))}</label>`).join('');
   $('#umUnits').innerHTML = unitBoxes;
   const list = $('#umList'); list.innerHTML = '';
   usersList.slice().sort((a,b)=> (a.email||'').localeCompare(b.email||'')).forEach(u => {
-    const units = u.admin ? '（全部）' : (u.units||[]).map(id=>{ const x=UNITS.find(v=>v.id===id); return x?x.name:id; }).join('、') || '（未指派）';
+    const units = u.admin ? t('um_all') : ((u.units||[]).map(id=>unitName(id)).join(getLang()==='zh'?'、':', ') || t('um_none'));
     const it = document.createElement('div'); it.className='tpl-item';
-    it.innerHTML = `<span class="nm">${esc(u.email)}</span><span class="tm">${u.admin?'管理員':units}</span>`;
-    const rm = document.createElement('button'); rm.className='rm'; rm.textContent='移除';
-    rm.onclick = ()=>{ if(u.email===myEmail){ alert('不能移除自己。'); return; } if(confirm('移除使用者 '+u.email+'？')){ if(window.SB) window.SB.deleteUser(u.email); } };
+    it.innerHTML = `<span class="nm">${esc(u.email)}</span><span class="tm">${u.admin?t('um_admin_label'):esc(units)}</span>`;
+    const rm = document.createElement('button'); rm.className='rm'; rm.textContent=t('um_remove');
+    rm.onclick = ()=>{ if(u.email===myEmail){ alert(t('um_no_self')); return; } if(confirm(t('um_confirm_remove',{email:u.email}))){ if(window.SB) window.SB.deleteUser(u.email); } };
     it.appendChild(rm); list.appendChild(it);
   });
 }
 $('#umAdd').onclick = ()=>{
   const email = $('#umEmail').value.trim().toLowerCase();
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ alert('請輸入正確的 Email。'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ alert(t('um_err_email')); return; }
   const admin = $('#umAdmin').checked;
   const units = $$('#umUnits input:checked').map(i=>i.value);
-  if(!admin && !units.length){ alert('請至少勾選一個單位，或設為管理員。'); return; }
+  if(!admin && !units.length){ alert(t('um_err_units')); return; }
   if(window.SB) window.SB.writeUser(email, { admin, units, name:'' });
   $('#umEmail').value=''; $('#umAdmin').checked=false; $$('#umUnits input').forEach(i=>i.checked=false);
+};
+
+/* ---------- 語言 ---------- */
+$$('.lang-sel').forEach(s => { s.value = getLang(); s.onchange = (e)=> setLang(e.target.value); });
+window.onLangChange = function(){
+  if(!$('#userModal').hidden) renderUserMgmt();
+  if(monthOpen) renderMonth();
+  else if(compareOpen) renderCompare();
+  else if(document.body.classList.contains('authed')) renderAll();
 };
 
 /* ---------- 初始化 ---------- */
@@ -875,4 +884,5 @@ function renderAll(){ renderTabs(); renderTemplates(); renderGrid(); updateBrush
 fillTimeSelect($('#segStart')); fillTimeSelect($('#segEnd'));
 fillTimeSelect($('#tplStart')); fillTimeSelect($('#tplEnd'));
 $('#tplStart').value = timeToSlot('09:00'); $('#tplEnd').value = timeToSlot('18:00');
+applyStaticI18n();
 /* 初始畫面等 Firebase 決定登入狀態後再繪製（見 firebase-init.js） */
