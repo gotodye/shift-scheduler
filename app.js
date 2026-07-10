@@ -112,14 +112,20 @@ function applyCloudSnapshot(d){
 }
 window.applyCloudSnapshot = applyCloudSnapshot;
 
-/* 只在管理員首次登入、雲端範本為空時，建立一組常用範本（每個瀏覽器只嘗試一次） */
-let _seedTried = false;
+/* 各單位一份範本。管理員首次載入（每瀏覽器一次）：刪掉舊的共用（無單位）範本，
+   並為沒有範本的單位建立一組常用預設。 */
+let _tplMigrated = false;
 function maybeSeedTemplates(){
-  if(_seedTried || !isAdmin) return;
-  _seedTried = true;
-  if(state.templates.length) return;
-  try{ if(localStorage.getItem('ss.seeded')) return; localStorage.setItem('ss.seeded','1'); }catch(e){}
-  DEFAULT_TEMPLATES.forEach(tp => { if(window.SB) window.SB.writeTemplate({ id:pid(), name:tp.name, start:tp.start, end:tp.end }); });
+  if(_tplMigrated || !isAdmin) return;
+  _tplMigrated = true;
+  try{ if(localStorage.getItem('ss.tpl.v2')) return; localStorage.setItem('ss.tpl.v2','1'); }catch(e){}
+  // 刪掉舊版共用（無單位）範本
+  state.templates.filter(t => !t.unitId).forEach(t => { if(window.SB) window.SB.deleteTemplate(t.id); });
+  // 每個單位若還沒有專屬範本，建立一組預設
+  UNIT_IDS.forEach(uid => {
+    if(state.templates.some(t => t.unitId === uid)) return;
+    DEFAULT_TEMPLATES.forEach(tp => { if(window.SB) window.SB.writeTemplate({ id:pid(), unitId:uid, name:tp.name, start:tp.start, end:tp.end }); });
+  });
 }
 
 /* 雲端快照可能連續進來（例如整月套用一次寫很多筆），用去抖動避免反覆重繪 */
@@ -180,14 +186,16 @@ function renderTabs(){
     const b = document.createElement('button');
     b.className = 'unit-tab' + (u.id===curUnit?' active':'');
     b.innerHTML = `${unitName(u.id)}<span class="cnt">${cnt}</span>`;
-    b.onclick = () => { curUnit = u.id; save(); renderAll(); };
+    b.onclick = () => { curUnit = u.id; activeTpl = null; save(); renderAll(); };
     el.appendChild(b);
   });
 }
 
+function unitTemplates(uid){ return state.templates.filter(t => t.unitId === uid); }
+
 function renderTemplates(){
   const wrap = $('#tplChips'); wrap.innerHTML = '';
-  state.templates.forEach(t => {
+  unitTemplates(curUnit).forEach(t => {
     const c = document.createElement('button');
     c.className = 'tpl-chip' + (t.id===activeTpl?' active':'');
     c.textContent = `${tplLabel(t.name)} ${t.start}–${t.end}`;
@@ -479,7 +487,8 @@ function renderMonth(){
 
 function renderMvTemplates(){
   const w = $('#mvTplChips'); w.innerHTML = '';
-  state.templates.forEach(t => {
+  const mp = findPerson(monthCtx.personId); const muid = mp ? mp.unitId : curUnit;
+  unitTemplates(muid).forEach(t => {
     const c = document.createElement('button');
     c.className = 'tpl-chip' + (t.id===activeTpl ? ' active' : '');
     c.textContent = `${tplLabel(t.name)} ${t.start}–${t.end}`;
@@ -598,7 +607,7 @@ $('#segDelete').onclick = ()=>{
 /* ---------- 範本管理 ---------- */
 function renderTplModal(){
   const list = $('#tplList'); list.innerHTML='';
-  state.templates.forEach(t=>{
+  unitTemplates(curUnit).forEach(t=>{
     const it=document.createElement('div'); it.className='tpl-item';
     it.innerHTML=`<span class="nm">${esc(tplLabel(t.name))}</span><span class="tm">${t.start}–${t.end}</span>`;
     const rm=document.createElement('button'); rm.className='rm'; rm.textContent=t('delete');
@@ -611,7 +620,7 @@ $('#tplAdd').onclick = ()=>{
   const s = +$('#tplStart').value, e = +$('#tplEnd').value;
   if(!name){ alert(t('tpl_err_name')); return; }
   if(e<=s){ alert(t('tpl_err_time')); return; }
-  const nt = { id:pid(), name, start:slotToTime(s), end:slotToTime(e) };
+  const nt = { id:pid(), unitId:curUnit, name, start:slotToTime(s), end:slotToTime(e) };
   state.templates.push(nt); if(window.SB) window.SB.writeTemplate(nt);
   $('#tplName').value='';
   save(); renderTplModal(); renderTemplates();
