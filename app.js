@@ -29,6 +29,15 @@ const APOLLO_HEADER = [
 /* 每個單位一個色，方便辨識 */
 const UNIT_COLOR = { ID:'#2f6fed', VN:'#0f9d58', TH:'#d8632f', PH:'#8b3fd8', KYC:'#c0396b' };
 
+/* 常用班別範本（管理員首次登入、範本為空時自動建立，可自行增刪修改） */
+const DEFAULT_TEMPLATES = [
+  { name:'早班', start:'09:00', end:'18:00' },
+  { name:'中班', start:'12:00', end:'21:00' },
+  { name:'晚班', start:'14:00', end:'23:00' },
+  { name:'早半', start:'09:00', end:'13:00' },
+  { name:'午半', start:'14:00', end:'18:00' },
+];
+
 /* ---------- 工具 ---------- */
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
@@ -94,6 +103,7 @@ function applyCloudSnapshot(d){
   (d.people||[]).forEach(p => { if(!people[p.unitId]) people[p.unitId] = []; people[p.unitId].push({ id:p.id, unitId:p.unitId, empNo:p.empNo, name:p.name }); });
   state.people = people;
   state.templates = (d.templates||[]).slice().sort((a,b)=> (a.start||'').localeCompare(b.start||''));
+  maybeSeedTemplates();
   const sched = {};
   (d.shifts||[]).forEach(s => { if(!sched[s.date]) sched[s.date] = {}; sched[s.date][s.personId] = { work:s.work||[], off:s.off||[] }; });
   state.schedule = sched;
@@ -101,6 +111,16 @@ function applyCloudSnapshot(d){
   scheduleRender();
 }
 window.applyCloudSnapshot = applyCloudSnapshot;
+
+/* 只在管理員首次登入、雲端範本為空時，建立一組常用範本（每個瀏覽器只嘗試一次） */
+let _seedTried = false;
+function maybeSeedTemplates(){
+  if(_seedTried || !isAdmin) return;
+  _seedTried = true;
+  if(state.templates.length) return;
+  try{ if(localStorage.getItem('ss.seeded')) return; localStorage.setItem('ss.seeded','1'); }catch(e){}
+  DEFAULT_TEMPLATES.forEach(tp => { if(window.SB) window.SB.writeTemplate({ id:pid(), name:tp.name, start:tp.start, end:tp.end }); });
+}
 
 /* 雲端快照可能連續進來（例如整月套用一次寫很多筆），用去抖動避免反覆重繪 */
 let _renderPending = false;
