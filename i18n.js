@@ -60,7 +60,7 @@ const I18N = {
     apply_all:'Apply to all', copy_day:'Copy a day', add_person:'+ Add person', clear_day:'Clear day',
     legend_drag:'Drag empty = new shift', legend_move:'Drag bar = move', legend_resize:'Drag ends = resize',
     legend_edit:'Click block = edit/delete/type', legend_brushoff:'Leave brush = drag a leave range',
-    legend_full:'休 = full-day leave', legend_month:'Name / M = month view',
+    legend_full:'L = full-day leave', legend_month:'Name / M = month view',
     mv_back:'← Back to day view', edit_person:'Edit person', prev_month:'Previous month', next_month:'Next month',
     apply_every:'Apply to every day', apply_weekday:'Weekdays only (Mon–Fri)', weekend_leave:'Weekend off', clear_month:'Clear month',
     mv_hint:'Same as day view: drag to create, drag the bar to move, drag ends to resize, click a block to edit/delete, 休 = full-day leave.',
@@ -110,7 +110,7 @@ const I18N = {
     apply_all:'Áp dụng cả nhóm', copy_day:'Sao chép ngày', add_person:'+ Thêm người', clear_day:'Xóa ngày',
     legend_drag:'Kéo ô trống = tạo ca', legend_move:'Kéo cả thanh = di chuyển', legend_resize:'Kéo hai đầu = đổi giờ',
     legend_edit:'Nhấp khối = sửa/xóa/loại', legend_brushoff:'Bút nghỉ = kéo khoảng nghỉ',
-    legend_full:'休 = nghỉ cả ngày', legend_month:'Tên / M = xem cả tháng',
+    legend_full:'N = nghỉ cả ngày', legend_month:'Tên / M = xem cả tháng',
     mv_back:'← Về xem ngày', edit_person:'Sửa người', prev_month:'Tháng trước', next_month:'Tháng sau',
     apply_every:'Áp dụng mỗi ngày', apply_weekday:'Chỉ ngày thường (T2–T6)', weekend_leave:'Cuối tuần nghỉ', clear_month:'Xóa cả tháng',
     mv_hint:'Giống xem ngày: kéo để tạo, kéo thanh để di chuyển, kéo hai đầu để chỉnh, nhấp khối để sửa/xóa, 休 = nghỉ cả ngày.',
@@ -143,7 +143,7 @@ const I18N = {
     noaccess_title:'Không có quyền truy cập', noaccess_desc:'Tài khoản {email} chưa được cấp quyền. Vui lòng liên hệ quản trị viên.', switch_account:'Đổi tài khoản',
     login_fail:'Đăng nhập thất bại: ', access_fail:'Không tải được quyền: ', save_person_fail:'Lưu người thất bại: ',
     empty_no_people:'Đơn vị này chưa có người. Nhấn "Thêm người" bên dưới.', no_units:'Chưa được gán đơn vị để sửa. Vui lòng liên hệ quản trị viên.',
-    leave_bar:'Không thể làm (nghỉ)', full_off_label:'Nghỉ (cả ngày)', off_prefix:'Nghỉ', off_short:'N', month_btn:'Th',
+    leave_bar:'Không thể làm (nghỉ)', full_off_label:'Nghỉ (cả ngày)', off_prefix:'Nghỉ', off_short:'N', month_btn:'M',
     title_apply_tpl:'Áp dụng mẫu đã chọn', title_apply_day:'Áp dụng mẫu cho ngày này', title_month:'Mở xem cả tháng',
     title_full_leave:'Nghỉ cả ngày (nhấn lại để hủy)', title_edit_person:'Nhấp tên → xem cả tháng',
     brush_hint:'Đã chọn mẫu "{name} {start}–{end}": nhấp ⤵ ở mỗi hàng để áp dụng, hoặc "Áp dụng cả nhóm" ở trên. Nhấp mẫu lần nữa để bỏ chọn.',
@@ -160,7 +160,7 @@ const I18N = {
     apply_all:'ใช้กับทั้งกลุ่ม', copy_day:'คัดลอกวัน', add_person:'+ เพิ่มบุคคล', clear_day:'ล้างวันนี้',
     legend_drag:'ลากช่องว่าง = สร้างเวร', legend_move:'ลากทั้งแท่ง = ย้าย', legend_resize:'ลากปลาย = ปรับเวลา',
     legend_edit:'คลิกบล็อก = แก้ไข/ลบ/เปลี่ยนชนิด', legend_brushoff:'พู่กันลา = ลากช่วงลา',
-    legend_full:'休 = ลาทั้งวัน', legend_month:'ชื่อ / M = ดูทั้งเดือน',
+    legend_full:'ล = ลาทั้งวัน', legend_month:'ชื่อ / M = ดูทั้งเดือน',
     mv_back:'← กลับมุมมองวัน', edit_person:'แก้ไขบุคคล', prev_month:'เดือนก่อน', next_month:'เดือนถัดไป',
     apply_every:'ใช้ทุกวันของเดือน', apply_weekday:'เฉพาะวันธรรมดา (จ.–ศ.)', weekend_leave:'ตั้งวันหยุดสุดสัปดาห์เป็นลา', clear_month:'ล้างทั้งเดือน',
     mv_hint:'เหมือนมุมมองวัน: ลากเพื่อสร้าง ลากแท่งเพื่อย้าย ลากปลายเพื่อปรับ คลิกบล็อกเพื่อแก้ไข/ลบ, 休 = ลาทั้งวัน',
@@ -193,7 +193,7 @@ const I18N = {
     noaccess_title:'ไม่มีสิทธิ์เข้าถึง', noaccess_desc:'บัญชี {email} ยังไม่ได้รับอนุญาต กรุณาติดต่อผู้ดูแลระบบ', switch_account:'เปลี่ยนบัญชี',
     login_fail:'เข้าสู่ระบบล้มเหลว: ', access_fail:'โหลดสิทธิ์ล้มเหลว: ', save_person_fail:'บันทึกบุคคลล้มเหลว: ',
     empty_no_people:'หน่วยนี้ยังไม่มีบุคคล กด "เพิ่มบุคคล" ด้านล่าง', no_units:'ยังไม่ได้กำหนดหน่วยที่แก้ไขได้ กรุณาติดต่อผู้ดูแล',
-    leave_bar:'ทำงานไม่ได้ (ลา)', full_off_label:'ลา (ทั้งวัน)', off_prefix:'ลา', off_short:'ล', month_btn:'ด',
+    leave_bar:'ทำงานไม่ได้ (ลา)', full_off_label:'ลา (ทั้งวัน)', off_prefix:'ลา', off_short:'ล', month_btn:'M',
     title_apply_tpl:'ใช้เทมเพลตที่เลือก', title_apply_day:'ใช้เทมเพลตกับวันนี้', title_month:'เปิดมุมมองเดือน',
     title_full_leave:'ลาทั้งวัน (กดอีกครั้งเพื่อยกเลิก)', title_edit_person:'คลิกชื่อ → มุมมองเดือน',
     brush_hint:'เลือกเทมเพลต "{name} {start}–{end}" แล้ว: กด ⤵ ที่แต่ละแถวเพื่อใช้ หรือ "ใช้กับทั้งกลุ่ม" ด้านบน กดเทมเพลตอีกครั้งเพื่อยกเลิก',
@@ -208,6 +208,16 @@ Object.assign(I18N.zh, { punch_empty:'檔案是空的。', punch_nocol:'找不�
 Object.assign(I18N.en, { punch_empty:'The file is empty.', punch_nocol:'Cannot find an "ID" or "Date" column. Please check the file format.', punch_norows:'No comparable rows.', cmp_no_export:'No data to export.', xlsx_read_fail:'Read failed: ' });
 Object.assign(I18N.vi, { punch_empty:'Tệp trống.', punch_nocol:'Không tìm thấy cột "Mã NV" hoặc "Ngày". Vui lòng kiểm tra định dạng tệp.', punch_norows:'Không có dòng để đối chiếu.', cmp_no_export:'Không có dữ liệu để xuất.', xlsx_read_fail:'Đọc thất bại: ' });
 Object.assign(I18N.th, { punch_empty:'ไฟล์ว่างเปล่า', punch_nocol:'ไม่พบคอลัมน์ "รหัส" หรือ "วันที่" กรุณาตรวจสอบรูปแบบไฟล์', punch_norows:'ไม่มีแถวสำหรับเทียบ', cmp_no_export:'ไม่มีข้อมูลให้ส่งออก', xlsx_read_fail:'อ่านไม่สำเร็จ: ' });
+
+Object.assign(I18N.zh, { tpl_early:'早班', tpl_mid:'中班', tpl_late:'晚班', tpl_early_half:'早半', tpl_noon_half:'午半' });
+Object.assign(I18N.en, { tpl_early:'Early', tpl_mid:'Mid', tpl_late:'Late', tpl_early_half:'Early half', tpl_noon_half:'Afternoon half' });
+Object.assign(I18N.vi, { tpl_early:'Ca sáng', tpl_mid:'Ca giữa', tpl_late:'Ca tối', tpl_early_half:'Nửa sáng', tpl_noon_half:'Nửa chiều' });
+Object.assign(I18N.th, { tpl_early:'กะเช้า', tpl_mid:'กะกลาง', tpl_late:'กะดึก', tpl_early_half:'ครึ่งเช้า', tpl_noon_half:'ครึ่งบ่าย' });
+
+/* 內建範本名稱 → 翻譯鍵；使用者自訂的名稱則原樣顯示 */
+const TPL_KEY = { '早班':'tpl_early', '中班':'tpl_mid', '晚班':'tpl_late', '早半':'tpl_early_half', '午半':'tpl_noon_half' };
+function tplLabel(name){ const k = TPL_KEY[name]; return k ? t(k) : name; }
+window.tplLabel = tplLabel;
 
 const EN_MONTH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const TH_MONTH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];

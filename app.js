@@ -190,7 +190,7 @@ function renderTemplates(){
   state.templates.forEach(t => {
     const c = document.createElement('button');
     c.className = 'tpl-chip' + (t.id===activeTpl?' active':'');
-    c.textContent = `${t.name} ${t.start}–${t.end}`;
+    c.textContent = `${tplLabel(t.name)} ${t.start}–${t.end}`;
     c.onclick = () => { activeTpl = (activeTpl===t.id? null : t.id); renderTemplates(); renderGrid(); updateBrushHint(); };
     wrap.appendChild(c);
   });
@@ -201,7 +201,7 @@ function updateBrushHint(){
   if(activeTpl){
     const tp = state.templates.find(x=>x.id===activeTpl);
     h.hidden = false;
-    h.textContent = t('brush_hint', { name:tp.name, start:tp.start, end:tp.end });
+    h.textContent = t('brush_hint', { name:tplLabel(tp.name), start:tp.start, end:tp.end });
   } else h.hidden = true;
 }
 
@@ -482,7 +482,7 @@ function renderMvTemplates(){
   state.templates.forEach(t => {
     const c = document.createElement('button');
     c.className = 'tpl-chip' + (t.id===activeTpl ? ' active' : '');
-    c.textContent = `${t.name} ${t.start}–${t.end}`;
+    c.textContent = `${tplLabel(t.name)} ${t.start}–${t.end}`;
     c.onclick = () => { activeTpl = (activeTpl===t.id ? null : t.id); renderMonth(); };
     w.appendChild(c);
   });
@@ -600,7 +600,7 @@ function renderTplModal(){
   const list = $('#tplList'); list.innerHTML='';
   state.templates.forEach(t=>{
     const it=document.createElement('div'); it.className='tpl-item';
-    it.innerHTML=`<span class="nm">${esc(t.name)}</span><span class="tm">${t.start}–${t.end}</span>`;
+    it.innerHTML=`<span class="nm">${esc(tplLabel(t.name))}</span><span class="tm">${t.start}–${t.end}</span>`;
     const rm=document.createElement('button'); rm.className='rm'; rm.textContent=t('delete');
     rm.onclick=()=>{ if(window.SB) window.SB.deleteTemplate(t.id); state.templates=state.templates.filter(x=>x.id!==t.id); if(activeTpl===t.id)activeTpl=null; save(); renderTplModal(); renderTemplates(); updateBrushHint(); };
     it.appendChild(rm); list.appendChild(it);
