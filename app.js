@@ -156,6 +156,8 @@ function scheduleRender(){
   requestAnimationFrame(() => {
     _renderPending = false;
     if($('#userModal') && !$('#userModal').hidden) renderUserMgmt();
+    if(weekOpen) renderWeek();
+    if(rosterOpen) renderRoster();
     if(monthOpen) renderMonth();
     else if(compareOpen) renderCompare();
     else if(statsOpen) renderStats();
@@ -294,6 +296,37 @@ function updateBrushHint(){
   } else h.hidden = true;
 }
 
+/* ---------- 覆蓋 / 最低人力 ---------- */
+function slotHeadcount(unitId, date){
+  const cnt = new Array(SLOTS).fill(0);
+  (state.people[unitId]||[]).forEach(p=>{
+    normalize(getDay(date, p.id).work).forEach(seg=>{ for(let s=seg[0]; s<seg[1]; s++) cnt[s]++; });
+  });
+  return cnt;
+}
+function minStaff(unitId){ try{ return Math.max(0, parseInt(localStorage.getItem('ss.min.'+unitId)||'1',10)||0); }catch(e){ return 1; } }
+function buildCoverageRow(unitId, date){
+  const cnt = slotHeadcount(unitId, date);
+  const min = minStaff(unitId);
+  let lo=-1, hi=-1; for(let s=0;s<SLOTS;s++){ if(cnt[s]>0){ if(lo<0)lo=s; hi=s; } }
+  const row=document.createElement('div'); row.className='row cov-row';
+  const name=document.createElement('div'); name.className='name-cell';
+  const who=document.createElement('div'); who.className='who'; who.innerHTML=`<div class="emp">${esc(t('cov_row'))}</div><div class="nm" style="font-size:12px">${esc(t('cov_min'))}</div>`;
+  const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.value=min; inp.className='cov-min-inp';
+  inp.onchange=()=>{ try{ localStorage.setItem('ss.min.'+unitId, String(Math.max(0,parseInt(inp.value||'0',10)||0))); }catch(e){} renderGrid(); };
+  name.appendChild(who); name.appendChild(inp);
+  const track=document.createElement('div'); track.className='track cov-track';
+  for(let s=0;s<SLOTS;s++){
+    const c=document.createElement('div'); c.className='cov-cell';
+    const inWin = lo>=0 && s>=lo && s<=hi;
+    if(cnt[s]>0){ c.textContent=cnt[s]; c.classList.add(cnt[s]<min?'cov-low':'cov-ok'); }
+    else if(inWin){ c.classList.add('cov-gap'); }
+    track.appendChild(c);
+  }
+  row.appendChild(name); row.appendChild(track);
+  return row;
+}
+
 function renderGrid(){
   clearSplitCache();
   $('#weekday').textContent = weekdayCh(curDate);
@@ -315,6 +348,7 @@ function renderGrid(){
     grid.appendChild(e);
   }
   ppl.forEach(p => grid.appendChild(personRow(p)));
+  if(ppl.length) grid.appendChild(buildCoverageRow(curUnit, curDate));
 
   const ar = document.createElement('div'); ar.className='row add-row';
   const nc = document.createElement('div'); nc.className='name-cell'; nc.textContent=t('add_person');
@@ -1126,6 +1160,11 @@ function computeStats(from, to, unitIds){
   return arr;
 }
 let _statsChart = null;
+let _trendChart = null;
+function monthTotals(y, m, unitIds){
+  const from=`${y}-${pad(m+1)}-01`, to=dateKey(new Date(y,m+1,0));
+  return computeStats(from,to,unitIds).reduce((a,r)=>{ a.actual+=r.actual; a.clock+=r.clock; a.bonus+=r.bonus; return a; }, {actual:0,clock:0,bonus:0});
+}
 function renderStats(){
   const from = $('#statsFrom').value, to = $('#statsTo').value;
   if(!from || !to) return;
@@ -1134,6 +1173,7 @@ function renderStats(){
   lastStats = { from, to, data };
   const box = $('#statsBody');
   if(_statsChart){ _statsChart.destroy(); _statsChart = null; }
+  if(_trendChart){ _trendChart.destroy(); _trendChart = null; }
   if(!data.length){ box.innerHTML = '<div class="empty">'+t('stats_none')+'</div>'; return; }
 
   const sum = data.reduce((a,r)=>{ a.actual+=r.actual; a.clock+=r.clock; a.bonus+=r.bonus; a.vio+=r.vioDays; a.o8+=r.over8; a.cs+=r.consec; a.wo+=r.weekOver; return a; }, {actual:0,clock:0,bonus:0,vio:0,o8:0,cs:0,wo:0});
@@ -1153,6 +1193,7 @@ function renderStats(){
     + `</div></div>`;
 
   const chart = `<div class="dash-card"><div class="dash-h">${t('dash_chart')}</div><div class="chart-wrap"><canvas id="statsChart"></canvas></div></div>`;
+  const trendCard = `<div class="dash-card"><div class="dash-h">${t('trend_title')}</div><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>`;
 
   const heads = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('st_workdays'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('st_vio'),t('st_leavedays')];
   const rowsHtml = data.map(r => `<tr><td>${esc(r.unit)}</td><td>${esc(r.emp)}</td><td>${esc(r.name)}${r.student?' <span class="stu">'+esc(t('foreign_student'))+'</span>':''}</td><td>${r.workDays}</td><td>${fmtHrs(r.actual)}</td><td>${fmtHrs(r.clock)}</td><td>${fmtHrs(r.bonus)}</td><td>${r.vioDays?('<b class="over-n">'+r.vioDays+'</b>'):'0'}</td><td>${r.leave}</td></tr>`).join('');
@@ -1169,7 +1210,7 @@ function renderStats(){
     }
   }
 
-  box.innerHTML = kpis + vio + chart + table + stuHtml;
+  box.innerHTML = kpis + vio + chart + trendCard + table + stuHtml;
 
   if(typeof Chart !== 'undefined'){
     _statsChart = new Chart($('#statsChart'), {
@@ -1179,6 +1220,19 @@ function renderStats(){
         { label:t('bh_bonus'), data:data.map(r=>Math.round(r.bonus/60*10)/10), backgroundColor:'#d64545' }
       ]},
       options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{stacked:true}, y:{stacked:true, beginAtZero:true} }, plugins:{ legend:{position:'top'} } }
+    });
+    // 跨月趨勢（近6個月）
+    const toD=new Date(to+'T00:00:00'); const mos=[];
+    for(let k=5;k>=0;k--){ const d=new Date(toD.getFullYear(), toD.getMonth()-k, 1); mos.push({y:d.getFullYear(), m:d.getMonth()}); }
+    const tr=mos.map(mm=>monthTotals(mm.y, mm.m, unitIds));
+    _trendChart = new Chart($('#trendChart'), {
+      type:'line',
+      data:{ labels:mos.map(mm=>monthLabel(mm.y,mm.m)), datasets:[
+        { label:t('bh_actual'), data:tr.map(x=>Math.round(x.actual/60*10)/10), borderColor:'#64748b', backgroundColor:'#64748b', tension:.3 },
+        { label:t('bh_clock'),  data:tr.map(x=>Math.round(x.clock/60*10)/10),  borderColor:'#2f6fed', backgroundColor:'#2f6fed', tension:.3 },
+        { label:t('bh_bonus'),  data:tr.map(x=>Math.round(x.bonus/60*10)/10),  borderColor:'#d64545', backgroundColor:'#d64545', tension:.3 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{beginAtZero:true} }, plugins:{ legend:{position:'top'} } }
     });
   }
 }
@@ -1197,10 +1251,127 @@ $('#statsExport').onclick = ()=>{
   XLSX.writeFile(wb, '工時統計_'+lastStats.from.replace(/-/g,'')+'_'+lastStats.to.replace(/-/g,'')+'.xlsx');
 };
 
+/* ---------- 複製上週 / 週檢視 / 交換移動 ---------- */
+function addDaysKey(dateStr, n){ const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return dateKey(d); }
+
+$('#copyWeek').onclick = ()=>{
+  if(!confirm(t('copy_week')+'？')) return;
+  const mon = weekKeyOf(curDate);
+  for(let i=0;i<7;i++){ const date=addDaysKey(mon,i), src=addDaysKey(date,-7);
+    (state.people[curUnit]||[]).forEach(p=> setDay(date, p.id, cloneDay(getDay(src, p.id)))); }
+  renderGrid();
+};
+
+let weekOpen=false, weekMon=null;
+function dayWorkMin(day){ return normalize(day.work).reduce((s,x)=>s+(x[1]-x[0])*30,0); }
+function shiftSummary(day){
+  if(isFullOff(day)) return { txt:t('off'), cls:'wk-off' };
+  const w=normalize(day.work); if(!w.length) return { txt:'', cls:'' };
+  return { txt:slotToTime(w[0][0])+'–'+slotToTime(w[w.length-1][1])+' ('+fmtHrs(dayWorkMin(day))+'h)', cls:'wk-work' };
+}
+function openWeekView(){ weekMon=weekKeyOf(curDate); weekOpen=true; $('#weekView').hidden=false; renderWeek(); }
+function closeWeekView(){ weekOpen=false; $('#weekView').hidden=true; }
+function renderWeek(){
+  const days=[]; for(let i=0;i<7;i++) days.push(addDaysKey(weekMon,i));
+  $('#weekLabel').textContent = unitName(curUnit)+'　'+weekMon+' ~ '+days[6];
+  const heads = `<th>${t('bh_name')}</th>`+days.map(d=>`<th>${d.slice(5)}<br><span class="rd">${dowLabel(new Date(d+'T00:00:00').getDay())}</span></th>`).join('')+`<th>${t('week_total')}</th>`;
+  const ppl=state.people[curUnit]||[];
+  const body=ppl.map(p=>{
+    let tot=0;
+    const cells=days.map(d=>{ const day=getDay(d,p.id); const s=shiftSummary(day); tot+=dayWorkMin(day); return `<td class="wk-cell ${s.cls}" data-date="${d}" data-p="${p.id}">${esc(s.txt)}</td>`; }).join('');
+    return `<tr><td>${esc(p.name)}${p.foreignStudent?' <span class="stu">'+esc(t('foreign_student'))+'</span>':''}</td>${cells}<td><b>${fmtHrs(tot)}</b></td></tr>`;
+  }).join('');
+  $('#weekTable').innerHTML = `<thead><tr>${heads}</tr></thead><tbody>${body||''}</tbody>`;
+  $$('#weekTable .wk-cell').forEach(td=> td.onclick=()=>{ curDate=td.dataset.date; save(); closeWeekView(); renderGrid(); });
+}
+$('#weekBtn').onclick=openWeekView; $('#weekBack').onclick=closeWeekView;
+$('#weekPrev').onclick=()=>{ weekMon=addDaysKey(weekMon,-7); renderWeek(); };
+$('#weekNext').onclick=()=>{ weekMon=addDaysKey(weekMon,7); renderWeek(); };
+
+function fillPersonSelect(sel){ sel.innerHTML=''; (state.people[curUnit]||[]).forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.empNo+' '+p.name; sel.appendChild(o); }); }
+$('#swapBtn').onclick=()=>{ fillPersonSelect($('#swapA')); fillPersonSelect($('#swapB')); $('#swapDate').value=curDate; $('#swapErr').hidden=true; showModal('#swapModal'); };
+$('#swapDo').onclick=()=>{
+  const a=$('#swapA').value, b=$('#swapB').value, d=$('#swapDate').value;
+  if(!a||!b||a===b){ showErr('#swapErr', t('swap_same')); return; }
+  const da=cloneDay(getDay(d,a)), db=cloneDay(getDay(d,b));
+  setDay(d,a,db); setDay(d,b,da); closeModal('#swapModal'); refreshView();
+};
+$('#swapMove').onclick=()=>{
+  const a=$('#swapA').value, b=$('#swapB').value, d=$('#swapDate').value;
+  if(!a||!b||a===b){ showErr('#swapErr', t('swap_same')); return; }
+  setDay(d,b,cloneDay(getDay(d,a))); closeModal('#swapModal'); refreshView();
+};
+
+/* ---------- 匯入人員（管理員） ---------- */
+$('#importBtn').onclick=()=>{ if(!isAdmin) return; $('#importFile').click(); };
+$('#importFile').onchange=(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(typeof XLSX==='undefined'){ alert(t('xlsx_missing')); return; }
+  const rd=new FileReader();
+  rd.onload=ev=>{ try{ importPeople(XLSX.read(new Uint8Array(ev.target.result),{type:'array'})); }catch(err){ alert(t('xlsx_read_fail')+err.message); } };
+  rd.readAsArrayBuffer(f); e.target.value='';
+};
+function importPeople(wb){
+  const ws=wb.Sheets[wb.SheetNames[0]]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(!aoa.length){ alert(t('punch_empty')); return; }
+  const head=aoa[0].map(x=>String(x).trim());
+  const col=names=>{ for(let i=0;i<head.length;i++){ if(names.some(n=>head[i].indexOf(n)>=0)) return i; } return -1; };
+  const ci={ emp:col(['工號','員工編號','ID','Mã','รหัส']), name:col(['姓名','Name','Tên','ชื่อ']), unit:col(['單位','部門','Unit','Đơn','หน่วย']), foreign:col(['外籍','Foreign','SV','นศ','student']) };
+  if(ci.emp<0||ci.name<0){ alert(t('import_bad')); return; }
+  const unitMap={}; UNITS.forEach(u=>{ unitMap[u.id.toLowerCase()]=u.id; unitMap[u.apollo.toLowerCase()]=u.id; ['zh','en','vi','th'].forEach(l=>{ const nm=(I18N[l]&&I18N[l]['unit_'+u.id])||''; if(nm) unitMap[nm.toLowerCase()]=u.id; }); });
+  let added=0;
+  for(let i=1;i<aoa.length;i++){
+    const r=aoa[i]||[]; const empNo=String(r[ci.emp]).trim(), name=String(r[ci.name]).trim();
+    if(!empNo||!name) continue;
+    let uid=curUnit; if(ci.unit>=0){ const uv=String(r[ci.unit]).trim().toLowerCase(); if(unitMap[uv]) uid=unitMap[uv]; }
+    if((state.people[uid]||[]).some(p=>p.empNo===empNo)) continue;
+    const foreign = ci.foreign>=0 ? /^(v|y|yes|是|true|1|có|ใช่)$/i.test(String(r[ci.foreign]).trim()) : false;
+    const np={ id:pid(), unitId:uid, empNo, name, foreignStudent:foreign };
+    if(!state.people[uid]) state.people[uid]=[]; state.people[uid].push(np);
+    if(window.SB) window.SB.writePerson(np); added++;
+  }
+  renderAll(); closeModal('#userModal'); alert(t('import_done')+added);
+}
+
+/* ---------- 月班表（可列印） ---------- */
+let rosterOpen=false, rosterYM=null;
+function rosterData(){
+  const y=rosterYM.y, m=rosterYM.m; const days=new Date(y,m+1,0).getDate();
+  const unitIds=$('#rosterAllUnits').checked?visibleUnits().map(u=>u.id):[curUnit];
+  const dates=[]; for(let dd=1;dd<=days;dd++) dates.push(`${y}-${pad(m+1)}-${pad(dd)}`);
+  const rows=[];
+  unitIds.forEach(uid=>(state.people[uid]||[]).forEach(p=>{
+    rows.push({ unit:unitName(uid), emp:p.empNo, name:p.name, cells:dates.map(d=>{ const day=getDay(d,p.id); if(isFullOff(day)) return t('off'); const w=normalize(day.work); return w.length?(slotToTime(w[0][0])+'-'+slotToTime(w[w.length-1][1])):''; }) });
+  }));
+  return { y,m,dates,rows };
+}
+function openRoster(){ const d=new Date(curDate+'T00:00:00'); rosterYM={y:d.getFullYear(),m:d.getMonth()}; rosterOpen=true; $('#rosterView').hidden=false; renderRoster(); }
+function closeRoster(){ rosterOpen=false; $('#rosterView').hidden=true; }
+function renderRoster(){
+  const R=rosterData(); $('#rosterLabel').textContent=monthLabel(R.y,R.m);
+  const dayHeads=R.dates.map(d=>{ const dow=new Date(d+'T00:00:00').getDay(); return `<th class="${(dow===0||dow===6)?'wke':''}">${d.slice(8)}<br><span class="rd">${dowLabel(dow)}</span></th>`; }).join('');
+  const body=R.rows.map(r=>`<tr><td class="rn">${esc(r.name)}</td>`+r.cells.map((c,i)=>{ const dow=new Date(R.dates[i]+'T00:00:00').getDay(); return `<td class="${(dow===0||dow===6)?'wke':''}">${esc(c)}</td>`; }).join('')+`</tr>`).join('');
+  $('#rosterBody').innerHTML=`<table class="cmp-table roster-table"><thead><tr><th class="rn">${t('bh_name')}</th>${dayHeads}</tr></thead><tbody>${body||''}</tbody></table>`;
+}
+$('#rosterBtn').onclick=openRoster; $('#rosterBack').onclick=closeRoster;
+$('#rosterAllUnits').onchange=()=>{ if(rosterOpen) renderRoster(); };
+$('#rosterPrev').onclick=()=>{ let m=rosterYM.m-1,y=rosterYM.y; if(m<0){m=11;y--;} rosterYM={y,m}; renderRoster(); };
+$('#rosterNext').onclick=()=>{ let m=rosterYM.m+1,y=rosterYM.y; if(m>11){m=0;y++;} rosterYM={y,m}; renderRoster(); };
+$('#rosterPrint').onclick=()=> window.print();
+$('#rosterExport').onclick=()=>{
+  if(typeof XLSX==='undefined'){ alert(t('xlsx_missing')); return; }
+  const R=rosterData(); const header=[t('bh_unit'),t('bh_emp'),t('bh_name'),...R.dates.map(d=>d.slice(8))];
+  const aoa=[header,...R.rows.map(r=>[r.unit,r.emp,r.name,...r.cells])];
+  const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,t('roster_title').slice(0,31));
+  XLSX.writeFile(wb,'月班表_'+R.y+pad(R.m+1)+'.xlsx');
+};
+
 /* ---------- 語言 ---------- */
 $$('.lang-sel').forEach(s => { s.value = getLang(); s.onchange = (e)=> setLang(e.target.value); });
 window.onLangChange = function(){
   if(!$('#userModal').hidden) renderUserMgmt();
+  if(weekOpen) renderWeek();
+  if(rosterOpen) renderRoster();
   if(monthOpen) renderMonth();
   else if(compareOpen) renderCompare();
   else if(statsOpen) renderStats();
