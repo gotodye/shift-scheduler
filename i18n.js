@@ -219,6 +219,11 @@ Object.assign(I18N.en, { foreign_student:'Foreign student', bonus_report:'Bonus 
 Object.assign(I18N.vi, { foreign_student:'Sinh viên nước ngoài', bonus_report:'Báo cáo giờ thưởng', bonus_btn:'Báo cáo thưởng', bh_unit:'Đơn vị', bh_emp:'Mã NV', bh_name:'Tên', bh_date:'Ngày', bh_weekday:'Thứ', bh_actual:'Giờ thực tế', bh_clock:'Giờ chấm công', bh_bonus:'Giờ thưởng', bh_reason:'Lý do', bs_detail:'Chi tiết thưởng', bs_total:'Tổng theo người', bh_hours:'Tổng giờ thưởng', rs_consec:'Quá 5 ngày liên tục', rs_day8:'Quá 8 giờ', rs_week20:'SV quá 20 giờ/tuần', bonus_none:'Không có giờ thưởng trong khoảng này.', bonus_desc:'Chỉ quản trị viên. Xuất giờ vượt mức, không chấm công để HR trả thưởng.' });
 Object.assign(I18N.th, { foreign_student:'นักศึกษาต่างชาติ', bonus_report:'รายงานชั่วโมงโบนัส', bonus_btn:'รายงานโบนัส', bh_unit:'หน่วย', bh_emp:'รหัส', bh_name:'ชื่อ', bh_date:'วันที่', bh_weekday:'วัน', bh_actual:'ชม.จริง', bh_clock:'ชม.ลงเวลา', bh_bonus:'ชม.โบนัส', bh_reason:'เหตุผล', bs_detail:'รายละเอียดโบนัส', bs_total:'รวมต่อคน', bh_hours:'รวมชั่วโมงโบนัส', rs_consec:'เกิน 5 วันติดต่อกัน', rs_day8:'เกิน 8 ชั่วโมง', rs_week20:'นศ.เกิน 20 ชม./สัปดาห์', bonus_none:'ไม่มีชั่วโมงโบนัสในช่วงนี้', bonus_desc:'เฉพาะผู้ดูแล ส่งออกชั่วโมงที่เกินกำหนดและไม่ลงเวลา เพื่อให้ HR จ่ายโบนัส' });
 
+Object.assign(I18N.zh, { tpl_break:'休息' });
+Object.assign(I18N.en, { tpl_break:'Break' });
+Object.assign(I18N.vi, { tpl_break:'Nghỉ' });
+Object.assign(I18N.th, { tpl_break:'พัก' });
+
 /* 內建範本名稱 → 翻譯鍵；使用者自訂的名稱則原樣顯示 */
 const TPL_KEY = { '早班':'tpl_early', '中班':'tpl_mid', '晚班':'tpl_late', '早半':'tpl_early_half', '午半':'tpl_noon_half' };
 function tplLabel(name){ const k = TPL_KEY[name]; return k ? t(k) : name; }

@@ -36,11 +36,11 @@ const UNIT_COLOR = { ID:'#2f6fed', VN:'#0f9d58', TH:'#d8632f', PH:'#8b3fd8', KYC
 
 /* 常用班別範本（管理員首次登入、範本為空時自動建立，可自行增刪修改） */
 const DEFAULT_TEMPLATES = [
-  { name:'早班', start:'09:00', end:'18:00' },
-  { name:'中班', start:'12:00', end:'21:00' },
-  { name:'晚班', start:'14:00', end:'23:00' },
-  { name:'早半', start:'09:00', end:'13:00' },
-  { name:'午半', start:'14:00', end:'18:00' },
+  { name:'早班', start:'09:00', end:'18:00', bs:'12:00', be:'13:00' },
+  { name:'中班', start:'12:00', end:'21:00', bs:'', be:'' },
+  { name:'晚班', start:'18:00', end:'22:00', bs:'', be:'' },
+  { name:'早半', start:'09:00', end:'13:00', bs:'', be:'' },
+  { name:'午半', start:'14:00', end:'18:00', bs:'', be:'' },
 ];
 
 /* ---------- 工具 ---------- */
@@ -124,14 +124,28 @@ let _tplMigrated = false;
 function maybeSeedTemplates(){
   if(_tplMigrated || !isAdmin) return;
   _tplMigrated = true;
-  try{ if(localStorage.getItem('ss.tpl.v2')) return; localStorage.setItem('ss.tpl.v2','1'); }catch(e){}
-  // 刪掉舊版共用（無單位）範本
-  state.templates.filter(t => !t.unitId).forEach(t => { if(window.SB) window.SB.deleteTemplate(t.id); });
-  // 每個單位若還沒有專屬範本，建立一組預設
-  UNIT_IDS.forEach(uid => {
-    if(state.templates.some(t => t.unitId === uid)) return;
-    DEFAULT_TEMPLATES.forEach(tp => { if(window.SB) window.SB.writeTemplate({ id:pid(), unitId:uid, name:tp.name, start:tp.start, end:tp.end }); });
-  });
+  const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+  const lsSet = k => { try{ localStorage.setItem(k,'1'); }catch(e){} };
+  // v2：刪掉舊版共用（無單位）範本，並為沒有範本的單位建立預設
+  if(!lsGet('ss.tpl.v2')){
+    lsSet('ss.tpl.v2');
+    state.templates.filter(t => !t.unitId).forEach(t => { if(window.SB) window.SB.deleteTemplate(t.id); });
+    UNIT_IDS.forEach(uid => {
+      if(state.templates.some(t => t.unitId === uid)) return;
+      DEFAULT_TEMPLATES.forEach(tp => { if(window.SB) window.SB.writeTemplate({ id:pid(), unitId:uid, name:tp.name, start:tp.start, end:tp.end, bs:tp.bs, be:tp.be }); });
+    });
+  }
+  // v3：把仍是舊預設值的範本，更新成新的時間/午休（不動已被自訂的）
+  if(!lsGet('ss.tpl.v3')){
+    lsSet('ss.tpl.v3');
+    state.templates.forEach(t => {
+      if(t.name==='早班' && t.start==='09:00' && t.end==='18:00' && !t.bs){
+        if(window.SB) window.SB.writeTemplate(Object.assign({}, t, { bs:'12:00', be:'13:00' }));
+      } else if(t.name==='晚班' && t.start==='14:00' && t.end==='23:00'){
+        if(window.SB) window.SB.writeTemplate(Object.assign({}, t, { start:'18:00', end:'22:00', bs:'', be:'' }));
+      }
+    });
+  }
 }
 
 /* 雲端快照可能連續進來（例如整月套用一次寫很多筆），用去抖動避免反覆重繪 */
@@ -480,22 +494,28 @@ function toggleLeave(date, personId){
 }
 
 /* ---------- 範本套用 ---------- */
+/* 範本 → 上班區塊（含休息則拆成兩段）與整體區間 */
+function templateSegs(tp){
+  const s = timeToSlot(tp.start), e = timeToSlot(tp.end);
+  if(tp.bs && tp.be){ const bs = timeToSlot(tp.bs), be = timeToSlot(tp.be); if(s < bs && bs < be && be < e) return [[s,bs],[be,e]]; }
+  return [[s,e]];
+}
+function templateSpan(tp){ return [timeToSlot(tp.start), timeToSlot(tp.end)]; }
+
 function applyTemplateTo(date, personId){
   if(!activeTpl) return;
-  const t = state.templates.find(x=>x.id===activeTpl);
-  const r = [timeToSlot(t.start), timeToSlot(t.end)];
+  const tp = state.templates.find(x=>x.id===activeTpl);
   const day = getDay(date, personId);
-  setDay(date, personId, { work: [[r[0], r[1]]], off: subtractRange(day.off, r) });
+  setDay(date, personId, { work: templateSegs(tp), off: subtractRange(day.off, templateSpan(tp)) });
   refreshView();
 }
 function applyTemplateAll(){
   if(!activeTpl) return;
-  const t = state.templates.find(x=>x.id===activeTpl);
-  const r = [timeToSlot(t.start), timeToSlot(t.end)];
+  const tp = state.templates.find(x=>x.id===activeTpl);
   (state.people[curUnit]||[]).forEach(p => {
     const day = getDay(curDate, p.id);
     if(isFullOff(day)) return;                 // 整日休假者略過
-    setDay(curDate, p.id, { work:[[r[0],r[1]]], off: subtractRange(day.off, r) });
+    setDay(curDate, p.id, { work: templateSegs(tp), off: subtractRange(day.off, templateSpan(tp)) });
   });
   renderGrid();
 }
@@ -578,14 +598,13 @@ function renderMvTemplates(){
 
 function applyMonth(scope){          // 'every' | 'weekday'
   if(!activeTpl) return;
-  const t = state.templates.find(x => x.id === activeTpl);
-  const r = [timeToSlot(t.start), timeToSlot(t.end)];
+  const tp = state.templates.find(x => x.id === activeTpl);
   monthDates().forEach(date => {
     const dow = new Date(date + 'T00:00:00').getDay();
     if(scope === 'weekday' && (dow===0 || dow===6)) return;
     const day = getDay(date, monthCtx.personId);
     if(isFullOff(day)) return;      // 整日休假者略過
-    setDay(date, monthCtx.personId, { work:[[r[0],r[1]]], off: subtractRange(day.off, r) });
+    setDay(date, monthCtx.personId, { work: templateSegs(tp), off: subtractRange(day.off, templateSpan(tp)) });
   });
   renderMonth();
 }
@@ -688,8 +707,8 @@ function renderTplModal(){
   const list = $('#tplList'); list.innerHTML='';
   unitTemplates(curUnit).forEach(t=>{
     const it=document.createElement('div'); it.className='tpl-item';
-    it.innerHTML=`<span class="nm">${esc(tplLabel(t.name))}</span><span class="tm">${t.start}–${t.end}</span>`;
-    const rm=document.createElement('button'); rm.className='rm'; rm.textContent=t('delete');
+    it.innerHTML=`<span class="nm">${esc(tplLabel(t.name))}</span><span class="tm">${t.start}–${t.end}${t.bs?(' · '+esc(window.t('tpl_break'))+' '+t.bs+'–'+t.be):''}</span>`;
+    const rm=document.createElement('button'); rm.className='rm'; rm.textContent=window.t('delete');
     rm.onclick=()=>{ if(window.SB) window.SB.deleteTemplate(t.id); state.templates=state.templates.filter(x=>x.id!==t.id); if(activeTpl===t.id)activeTpl=null; save(); renderTplModal(); renderTemplates(); updateBrushHint(); };
     it.appendChild(rm); list.appendChild(it);
   });
@@ -699,9 +718,12 @@ $('#tplAdd').onclick = ()=>{
   const s = +$('#tplStart').value, e = +$('#tplEnd').value;
   if(!name){ alert(t('tpl_err_name')); return; }
   if(e<=s){ alert(t('tpl_err_time')); return; }
-  const nt = { id:pid(), unitId:curUnit, name, start:slotToTime(s), end:slotToTime(e) };
+  const bsv = $('#tplBs').value, bev = $('#tplBe').value;
+  let bs='', be='';
+  if(bsv!=='' && bev!==''){ const bsn=+bsv, ben=+bev; if(bsn>s && ben>bsn && ben<e){ bs=slotToTime(bsn); be=slotToTime(ben); } else { alert(t('tpl_err_time')); return; } }
+  const nt = { id:pid(), unitId:curUnit, name, start:slotToTime(s), end:slotToTime(e), bs, be };
   state.templates.push(nt); if(window.SB) window.SB.writeTemplate(nt);
-  $('#tplName').value='';
+  $('#tplName').value=''; $('#tplBs').value=''; $('#tplBe').value='';
   save(); renderTplModal(); renderTemplates();
 };
 
@@ -1036,6 +1058,10 @@ window.onLangChange = function(){
 function renderAll(){ renderTabs(); renderTemplates(); renderGrid(); updateBrushHint(); }
 fillTimeSelect($('#segStart')); fillTimeSelect($('#segEnd'));
 fillTimeSelect($('#tplStart')); fillTimeSelect($('#tplEnd'));
+fillTimeSelect($('#tplBs')); fillTimeSelect($('#tplBe'));
+$('#tplBs').insertAdjacentHTML('afterbegin','<option value="">—</option>');
+$('#tplBe').insertAdjacentHTML('afterbegin','<option value="">—</option>');
 $('#tplStart').value = timeToSlot('09:00'); $('#tplEnd').value = timeToSlot('18:00');
+$('#tplBs').value=''; $('#tplBe').value='';
 applyStaticI18n();
 /* 初始畫面等 Firebase 決定登入狀態後再繪製（見 firebase-init.js） */
