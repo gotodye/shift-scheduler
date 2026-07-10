@@ -1046,6 +1046,54 @@ $('#umAdd').onclick = ()=>{
   $('#umEmail').value=''; $('#umAdmin').checked=false; $$('#umUnits input').forEach(i=>i.checked=false);
 };
 
+/* ---------- 測試資料（管理員） ---------- */
+function seedTestData(){
+  if(!isAdmin || !window.SB){ return; }
+  if(!confirm(t('test_seed_confirm'))) return;
+  const names = {
+    ID:['Andi','Budi','Citra'], VN:['An Nguyen','Binh Tran','Cuc Le'],
+    TH:['Anan','Busaba','Chai'], PH:['Ana Cruz','Ben Reyes','Carlo Diaz'],
+    KYC:['王測試','李測試','陳測試']
+  };
+  const d0 = new Date(curDate+'T00:00:00'); const y=d0.getFullYear(), m=d0.getMonth();
+  const days = new Date(y, m+1, 0).getDate();
+  const mk = dd => `${y}-${pad(m+1)}-${pad(dd)}`;
+  const EARLY = () => [[18,24],[26,36]];   // 09-18 午休12-13 = 8h
+  let count = 0;
+  UNIT_IDS.forEach(uid => {
+    (names[uid]||[]).forEach((nm, i) => {
+      const id = pid(); const foreign = (i===2);
+      window.SB.writePerson({ id, unitId:uid, empNo:'TEST'+uid+(i+1), name:nm, foreignStudent:foreign });
+      count++;
+      for(let dd=1; dd<=days; dd++){
+        const dow = new Date(mk(dd)+'T00:00:00').getDay();
+        if(dow>=1 && dow<=5) window.SB.writeShift(mk(dd), id, uid, { work:EARLY(), off:[] });
+      }
+      if(uid==='ID' && i===0){                         // Andi：一天加班10h、一天整日休假
+        window.SB.writeShift(mk(Math.min(8,days)),  id, uid, { work:[[16,36]], off:[] });   // 08-18=10h
+        window.SB.writeShift(mk(Math.min(15,days)), id, uid, { work:[], off:[[0,48]] });    // 整日休假
+      }
+      if(uid==='ID' && i===1){                         // Budi：連續 7 天
+        for(let dd=6; dd<=Math.min(12,days); dd++) window.SB.writeShift(mk(dd), id, uid, { work:EARLY(), off:[] });
+      }
+    });
+  });
+  alert(t('test_seed_done'));
+}
+function clearTestData(){
+  if(!isAdmin || !window.SB){ return; }
+  if(!confirm(t('test_clear_confirm'))) return;
+  const ids = [];
+  UNIT_IDS.forEach(uid => (state.people[uid]||[]).forEach(p => { if(String(p.empNo).indexOf('TEST')===0) ids.push(p.id); }));
+  ids.forEach(id => {
+    window.SB.deletePerson(id);
+    Object.keys(state.schedule).forEach(dt => { if(state.schedule[dt][id]) window.SB.deleteShift(dt, id); });
+  });
+  alert(t('test_clear_done') + ids.length);
+}
+$('#seedTestBtn').onclick = seedTestData;
+$('#clearTestBtn').onclick = clearTestData;
+
 /* ---------- 工時統計 ---------- */
 let statsOpen = false;
 let lastStats = null;
