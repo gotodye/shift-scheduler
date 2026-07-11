@@ -48,6 +48,7 @@ window.SB = {
 
 // 即時同步
 const store = { people:[], templates:[], shifts:[], users:[] };
+let tplLoaded = false;
 let listening = false;
 function push(){
   window.applyCloudSnapshot({
@@ -55,12 +56,13 @@ function push(){
     templates: store.templates,
     shifts: store.shifts.map(s => ({ date:s.date, personId:s.personId, work:fromDocs(s.work), off:fromDocs(s.off) })),
     users: store.users,
+    tplReady: tplLoaded,           // templates 首次載入後才允許自動建立/去重
   });
 }
 function startListeners(){
   if(listening) return; listening = true;
   onSnapshot(collection(db, "people"),    qs => { store.people    = qs.docs.map(d => ({ id:d.id, ...d.data() })); push(); }, e => console.warn("people", e));
-  onSnapshot(collection(db, "templates"), qs => { store.templates = qs.docs.map(d => ({ id:d.id, ...d.data() })); push(); }, e => console.warn("templates", e));
+  onSnapshot(collection(db, "templates"), qs => { store.templates = qs.docs.map(d => ({ id:d.id, ...d.data() })); tplLoaded = true; push(); }, e => console.warn("templates", e));
   onSnapshot(collection(db, "shifts"),    qs => { store.shifts    = qs.docs.map(d => ({ ...d.data() }));          push(); }, e => console.warn("shifts", e));
   onSnapshot(collection(db, "users"),     qs => { store.users     = qs.docs.map(d => ({ email:d.id, ...d.data() })); push(); }, e => console.warn("users", e));
 }

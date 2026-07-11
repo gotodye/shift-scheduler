@@ -108,7 +108,7 @@ function applyCloudSnapshot(d){
   (d.people||[]).forEach(p => { if(!people[p.unitId]) people[p.unitId] = []; people[p.unitId].push({ id:p.id, unitId:p.unitId, empNo:p.empNo, name:p.name, foreignStudent:!!p.foreignStudent }); });
   state.people = people;
   state.templates = (d.templates||[]).slice().sort((a,b)=> (a.start||'').localeCompare(b.start||''));
-  maybeSeedTemplates();
+  maybeSeedTemplates(d.tplReady);
   const sched = {};
   (d.shifts||[]).forEach(s => { if(!sched[s.date]) sched[s.date] = {}; sched[s.date][s.personId] = { work:s.work||[], off:s.off||[] }; });
   state.schedule = sched;
@@ -121,8 +121,8 @@ window.applyCloudSnapshot = applyCloudSnapshot;
 /* 各單位一份範本。管理員首次載入（每瀏覽器一次）：刪掉舊的共用（無單位）範本，
    並為沒有範本的單位建立一組常用預設。 */
 let _tplMigrated = false;
-function maybeSeedTemplates(){
-  if(_tplMigrated || !isAdmin) return;
+function maybeSeedTemplates(ready){
+  if(!ready || _tplMigrated || !isAdmin) return;   // 等 templates 載入完再動作，避免時序造成的重複
   _tplMigrated = true;
   const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const lsSet = k => { try{ localStorage.setItem(k,'1'); }catch(e){} };
@@ -160,6 +160,19 @@ function maybeSeedTemplates(){
       const k = sig(t);
       if(seen[k]){ if(window.SB) window.SB.deleteTemplate(t.id); return; }   // 重複 → 刪
       seen[k] = 1;
+      if(t.name==='晚班' && t.start==='14:00' && t.end==='23:00' && window.SB) window.SB.writeTemplate(Object.assign({}, t, { start:'18:00', end:'22:00', bs:'', be:'' }));
+      else if(t.name==='早班' && t.start==='09:00' && t.end==='18:00' && !t.bs && window.SB) window.SB.writeTemplate(Object.assign({}, t, { bs:'12:00', be:'13:00' }));
+    });
+  }
+  // v5：修正時序後再乾淨去重一次（涵蓋先前已設過 v4 旗標的瀏覽器）
+  if(!lsGet('ss.tpl.v5')){
+    lsSet('ss.tpl.v5');
+    const sig5 = t => { let s=t.start,e=t.end,bs=t.bs||'',be=t.be||''; if(t.name==='晚班'&&s==='14:00'&&e==='23:00'){s='18:00';e='22:00';bs='';be='';} if(t.name==='早班'&&s==='09:00'&&e==='18:00'&&!bs){bs='12:00';be='13:00';} return [t.unitId,t.name,s,e,bs,be].join('|'); };
+    const seen5 = {};
+    state.templates.slice().sort((a,b)=> (a.id<b.id?-1:1)).forEach(t => {
+      const k = sig5(t);
+      if(seen5[k]){ if(window.SB) window.SB.deleteTemplate(t.id); return; }
+      seen5[k] = 1;
       if(t.name==='晚班' && t.start==='14:00' && t.end==='23:00' && window.SB) window.SB.writeTemplate(Object.assign({}, t, { start:'18:00', end:'22:00', bs:'', be:'' }));
       else if(t.name==='早班' && t.start==='09:00' && t.end==='18:00' && !t.bs && window.SB) window.SB.writeTemplate(Object.assign({}, t, { bs:'12:00', be:'13:00' }));
     });

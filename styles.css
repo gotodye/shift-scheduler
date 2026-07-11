@@ -239,10 +239,10 @@ body:not(.authed) .legend{ display:none; }
 .seg:active{ cursor:grabbing; }
 .seg.temp{ opacity:.72; }
 .seg.off{ background:repeating-linear-gradient(45deg, var(--amber1) 0 8px, var(--amber2) 8px 16px); color:var(--warn-tx); }
-.over{ position:absolute; top:4px; height:calc(var(--row-h) - 12px); border-radius:5px;
-  background:repeating-linear-gradient(45deg, rgba(214,69,69,.5) 0 6px, rgba(214,69,69,.75) 6px 12px);
-  border:2px solid #b42318; pointer-events:none; z-index:5; }
-.seg .lbl{ pointer-events:none; padding:0 4px; white-space:nowrap; }
+.over{ position:absolute; top:5px; height:calc(var(--row-h) - 12px); border-radius:8px; pointer-events:none; z-index:6;
+  background:repeating-linear-gradient(45deg, rgba(255,59,48,.13) 0 7px, rgba(255,59,48,.22) 7px 14px);
+  box-shadow: inset 0 0 0 1.5px rgba(255,59,48,.5); }
+.seg .lbl{ pointer-events:none; padding:0 4px; white-space:nowrap; text-shadow:0 1px 1px rgba(0,0,0,.28); }
 .seg .hd{ position:absolute; top:0; bottom:0; width:7px; cursor:ew-resize; }
 .seg .hd.l{ left:0; } .seg .hd.r{ right:0; }
 
