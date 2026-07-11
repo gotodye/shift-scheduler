@@ -7,7 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>排班系統</title>
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
+<script>try{var _t=localStorage.getItem('ss.theme');if(_t==='light'||_t==='dark')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -64,6 +65,13 @@
     <div class="menu" data-menu>
       <button class="btn ghost menu-btn caret"><span id="userChip" class="user-chip"></span></button>
       <div class="menu-list menu-right">
+        <div class="menu-row menu-keep"><span data-i18n="theme">主題</span>
+          <div class="seg-theme">
+            <button data-theme-val="auto" data-i18n="theme_auto">自動</button>
+            <button data-theme-val="light" data-i18n="theme_light">淺色</button>
+            <button data-theme-val="dark" data-i18n="theme_dark">深色</button>
+          </div>
+        </div>
         <div class="menu-row menu-keep"><span data-i18n="lang_label">語言</span>
           <select id="langSel" class="lang-sel" title="Language">
             <option value="zh">中文</option>
@@ -368,8 +376,8 @@
   </div>
 </div>
 
-<script src="i18n.js?v=9"></script>
-<script src="app.js?v=9"></script>
-<script type="module" src="firebase-init.js?v=9"></script>
+<script src="i18n.js?v=10"></script>
+<script src="app.js?v=10"></script>
+<script type="module" src="firebase-init.js?v=10"></script>
 </body>
 </html>

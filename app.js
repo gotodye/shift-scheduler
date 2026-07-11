@@ -1406,6 +1406,19 @@ $$('[data-menu]').forEach(m => {
 });
 document.addEventListener('click', () => $$('[data-menu]').forEach(x => x.classList.remove('open')));
 
+/* ---------- 主題（自動/淺/深） ---------- */
+function applyThemePref(v){
+  try{ localStorage.setItem('ss.theme', v); }catch(e){}
+  if(v==='light' || v==='dark') document.documentElement.setAttribute('data-theme', v);
+  else document.documentElement.removeAttribute('data-theme');
+  $$('.seg-theme button').forEach(b=> b.classList.toggle('on', b.dataset.themeVal===v));
+}
+(function(){
+  let v='auto'; try{ v=localStorage.getItem('ss.theme')||'auto'; }catch(e){}
+  $$('.seg-theme button').forEach(b=>{ b.onclick=(e)=>{ e.stopPropagation(); applyThemePref(b.dataset.themeVal); }; });
+  applyThemePref(v);
+})();
+
 /* ---------- 語言 ---------- */
 $$('.lang-sel').forEach(s => { s.value = getLang(); s.onchange = (e)=> setLang(e.target.value); });
 window.onLangChange = function(){
