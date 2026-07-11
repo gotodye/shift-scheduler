@@ -1115,7 +1115,7 @@ function parsePunch(wb){
     });
   }
   if(!lastPunches.length){ alert(t('punch_norows')); return; }
-  compareOpen = true; $('#compareView').hidden = false; renderCompare();
+  compareOpen = true; $('#compareView').hidden = false; renderCompare(); setActiveNav();
 }
 
 function computeCompare(grace){
@@ -1196,7 +1196,7 @@ function renderCompare(){
   drawIcons();
 }
 
-$('#cmpBack').onclick = ()=>{ compareOpen=false; $('#compareView').hidden=true; };
+$('#cmpBack').onclick = ()=>{ compareOpen=false; $('#compareView').hidden=true; setActiveNav(); };
 $('#cmpGrace').oninput = ()=>{ if(compareOpen) renderCompare(); };
 $('#cmpOnlyIssues').onchange = ()=>{ if(compareOpen) renderCompare(); };
 $('#cmpExport').onclick = ()=>{
@@ -1415,7 +1415,7 @@ function renderStats(){
   }
 }
 function openStats(){ const r = monthRange(curDate); $('#statsFrom').value=r[0]; $('#statsTo').value=r[1]; statsOpen=true; $('#statsView').hidden=false; renderStats(); }
-$('#statsBack').onclick = ()=>{ statsOpen=false; $('#statsView').hidden=true; };
+$('#statsBack').onclick = ()=>{ statsOpen=false; $('#statsView').hidden=true; setActiveNav(); };
 $('#statsFrom').onchange = ()=>{ if(statsOpen) renderStats(); };
 $('#statsTo').onchange = ()=>{ if(statsOpen) renderStats(); };
 $('#statsAllUnits').onchange = ()=>{ if(statsOpen) renderStats(); };
@@ -1448,7 +1448,7 @@ function shiftSummary(day){
   return { txt:slotToTime(w[0][0])+'–'+slotToTime(w[w.length-1][1])+' ('+fmtHrs(dayWorkMin(day))+'h)', cls:'wk-work' };
 }
 function openWeekView(){ weekMon=weekKeyOf(curDate); weekOpen=true; $('#weekView').hidden=false; renderWeek(); }
-function closeWeekView(){ weekOpen=false; $('#weekView').hidden=true; }
+function closeWeekView(){ weekOpen=false; $('#weekView').hidden=true; setActiveNav(); }
 function renderWeek(){
   const days=[]; for(let i=0;i<7;i++) days.push(addDaysKey(weekMon,i));
   $('#weekLabel').textContent = unitName(curUnit)+'　'+weekMon+' ~ '+days[6];
@@ -1524,7 +1524,7 @@ function rosterData(){
   return { y,m,dates,rows };
 }
 function openRoster(){ const d=new Date(curDate+'T00:00:00'); rosterYM={y:d.getFullYear(),m:d.getMonth()}; rosterOpen=true; $('#rosterView').hidden=false; renderRoster(); }
-function closeRoster(){ rosterOpen=false; $('#rosterView').hidden=true; }
+function closeRoster(){ rosterOpen=false; $('#rosterView').hidden=true; setActiveNav(); }
 function renderRoster(){
   const R=rosterData(); $('#rosterLabel').textContent=monthLabel(R.y,R.m);
   const dayHeads=R.dates.map(d=>{ const dow=new Date(d+'T00:00:00').getDay(); return `<th class="${(dow===0||dow===6)?'wke':''}">${d.slice(8)}<br><span class="rd">${dowLabel(dow)}</span></th>`; }).join('');
@@ -1568,6 +1568,16 @@ function backToGrid(){
   if(statsOpen){ statsOpen=false; $('#statsView').hidden=true; }
   if(compareOpen){ compareOpen=false; $('#compareView').hidden=true; }
   if(monthOpen) closeMonthView();
+  setActiveNav();
+}
+/* 依目前開啟的檢視，標示導覽列的 active 項目（讀 DOM 真實狀態，最保險） */
+function setActiveNav(){
+  let cur = 'grid';
+  if(!$('#weekView').hidden) cur = 'week';
+  else if(!$('#rosterView').hidden) cur = 'roster';
+  else if(!$('#statsView').hidden) cur = 'stats';
+  else if(!$('#compareView').hidden) cur = 'compare';
+  $$('.sr-btn').forEach(b => b.classList.toggle('active', b.dataset.sr === cur));
 }
 $$('.sr-btn').forEach(b => b.onclick = ()=>{
   const a = b.dataset.sr;
@@ -1578,7 +1588,9 @@ $$('.sr-btn').forEach(b => b.onclick = ()=>{
   else if(a==='bonus') openBonus();
   else if(a==='signout'){ if(window.SB) window.SB.signOut(); }
   else if(a==='grid') backToGrid();
+  setActiveNav();
 });
+setActiveNav();   // 初始高亮「排班」
 
 /* ---------- 主題（自動/淺/深） ---------- */
 function applyThemePref(v){

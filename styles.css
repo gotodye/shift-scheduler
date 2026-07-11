@@ -183,6 +183,8 @@ body:not(.authed) .legend{ display:none; }
 .siderail:hover .sr-btn{ justify-content:flex-start; padding-left:16px; }
 .siderail:hover .sr-btn span{ opacity:1; max-width:130px; margin-left:12px; }
 .sr-btn:hover{ background:var(--hover); color:var(--accent); }
+.sr-btn.active{ background:var(--accent-bg); color:var(--accent); }
+.sr-btn.active svg{ color:var(--accent); }
 .sr-btn:active{ transform:scale(.97); }
 .sr-bottom{ margin-top:auto; }
 @media (min-width:761px){ body.authed{ padding-left:90px; } }
