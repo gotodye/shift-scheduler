@@ -376,7 +376,8 @@ function renderGrid(){
 
   const ppl = state.people[curUnit] || [];
   if(ppl.length===0){
-    const e = document.createElement('div'); e.className='empty'; e.textContent=t('empty_no_people');
+    const e = document.createElement('div'); e.className='empty';
+    e.innerHTML = '<i data-lucide="user-round-plus"></i><div>'+esc(t('empty_no_people'))+'</div>';
     grid.appendChild(e);
   }
   ppl.forEach(p => grid.appendChild(personRow(p)));
@@ -396,6 +397,7 @@ function renderGrid(){
     nl.innerHTML = '<span class="now-dot"></span>';
     grid.appendChild(nl);
   }
+  drawIcons();
 }
 
 function personRow(p){
@@ -404,7 +406,7 @@ function personRow(p){
 
   const name = document.createElement('div'); name.className='name-cell';
   const applyBtn = document.createElement('button');
-  applyBtn.className='mini apply'; applyBtn.textContent='⤵'; applyBtn.title=t('title_apply_tpl');
+  applyBtn.className='mini apply'; applyBtn.innerHTML='<i data-lucide="corner-down-right"></i>'; applyBtn.title=t('title_apply_tpl');
   applyBtn.disabled = !activeTpl;
   applyBtn.onclick = (e)=>{ e.stopPropagation(); applyTemplateTo(curDate, p.id); };
   const who = document.createElement('div'); who.className='who';
@@ -412,10 +414,10 @@ function personRow(p){
   who.style.cursor='pointer'; who.title=t('title_edit_person');
   who.onclick = ()=> openMonthView(p.id);
   const mvBtn = document.createElement('button');
-  mvBtn.className='mini mv-mini'; mvBtn.textContent=t('month_btn'); mvBtn.title=t('title_month');
+  mvBtn.className='mini mv-mini'; mvBtn.innerHTML='<i data-lucide="calendar"></i>'; mvBtn.title=t('title_month');
   mvBtn.onclick = (e)=>{ e.stopPropagation(); openMonthView(p.id); };
   const leaveBtn = document.createElement('button');
-  leaveBtn.className='mini'+(isFullOff(day)?' on':''); leaveBtn.textContent=t('off_short'); leaveBtn.title=t('title_full_leave');
+  leaveBtn.className='mini'+(isFullOff(day)?' on':''); leaveBtn.innerHTML='<i data-lucide="bed"></i>'; leaveBtn.title=t('title_full_leave');
   leaveBtn.onclick = (e)=>{ e.stopPropagation(); toggleLeave(curDate, p.id); };
   name.appendChild(applyBtn); name.appendChild(who); name.appendChild(mvBtn); name.appendChild(leaveBtn);
 
@@ -645,17 +647,18 @@ function renderMonth(){
     const row = document.createElement('div'); row.className = 'row' + ((dow===0||dow===6) ? ' wk' : '');
     const dc = document.createElement('div'); dc.className = 'name-cell day-cell';
     const ab = document.createElement('button');
-    ab.className = 'mini apply'; ab.textContent = '⤵'; ab.disabled = !activeTpl; ab.title = t('title_apply_day');
+    ab.className = 'mini apply'; ab.innerHTML = '<i data-lucide="corner-down-right"></i>'; ab.disabled = !activeTpl; ab.title = t('title_apply_day');
     ab.onclick = (e)=>{ e.stopPropagation(); applyTemplateTo(date, p.id); };
     const who = document.createElement('div'); who.className = 'who';
     who.innerHTML = `<div class="nm">${pad(monthCtx.m+1)}/${dd} <span class="dow">(${dowLabel(dow)})</span></div>`;
     const lv = document.createElement('button');
-    lv.className = 'mini' + (isFullOff(day) ? ' on' : ''); lv.textContent = t('off_short'); lv.title = t('title_full_leave');
+    lv.className = 'mini' + (isFullOff(day) ? ' on' : ''); lv.innerHTML = '<i data-lucide="bed"></i>'; lv.title = t('title_full_leave');
     lv.onclick = (e)=>{ e.stopPropagation(); toggleLeave(date, p.id); };
     dc.appendChild(ab); dc.appendChild(who); dc.appendChild(lv);
     row.appendChild(dc); row.appendChild(buildTrack(date, p.id));
     grid.appendChild(row);
   });
+  drawIcons();
 }
 
 function renderMvTemplates(){
@@ -1218,13 +1221,13 @@ function renderStats(){
   if(!data.length){ box.innerHTML = '<div class="empty">'+t('stats_none')+'</div>'; return; }
 
   const sum = data.reduce((a,r)=>{ a.actual+=r.actual; a.clock+=r.clock; a.bonus+=r.bonus; a.vio+=r.vioDays; a.o8+=r.over8; a.cs+=r.consec; a.wo+=r.weekOver; return a; }, {actual:0,clock:0,bonus:0,vio:0,o8:0,cs:0,wo:0});
-  const kpi = (label,val,cls)=> `<div class="kpi ${cls}"><div class="kpi-l">${label}</div><div class="kpi-v">${val}</div></div>`;
+  const kpi = (label,val,cls,icon)=> `<div class="kpi ${cls}"><div class="kpi-head"><span class="kpi-l">${label}</span><i data-lucide="${icon}"></i></div><div class="kpi-v">${val}</div></div>`;
   const kpis = '<div class="kpi-row">'
-    + kpi(t('dash_people'), data.length, 'k-blue')
-    + kpi(t('bh_actual'), fmtHrs(sum.actual), 'k-slate')
-    + kpi(t('bh_clock'), fmtHrs(sum.clock), 'k-green')
-    + kpi(t('bh_bonus'), fmtHrs(sum.bonus), 'k-amber')
-    + kpi(t('dash_vio_days'), sum.vio, 'k-red')
+    + kpi(t('dash_people'), data.length, 'k-blue', 'users')
+    + kpi(t('bh_actual'), fmtHrs(sum.actual), 'k-slate', 'clock')
+    + kpi(t('bh_clock'), fmtHrs(sum.clock), 'k-green', 'badge-check')
+    + kpi(t('bh_bonus'), fmtHrs(sum.bonus), 'k-amber', 'gift')
+    + kpi(t('dash_vio_days'), sum.vio, 'k-red', 'alert-triangle')
     + '</div>';
 
   const vio = `<div class="dash-card"><div class="dash-h">${t('dash_vio_title')}</div><div class="vio-row">`
@@ -1252,6 +1255,7 @@ function renderStats(){
   }
 
   box.innerHTML = kpis + vio + chart + trendCard + table + stuHtml;
+  drawIcons();
 
   if(typeof Chart !== 'undefined'){
     _statsChart = new Chart($('#statsChart'), {

@@ -3,7 +3,7 @@
   --name-w: 172px;         /* 左側人員欄寬 */
   --row-h: 44px;
   --radius: 10px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", "Microsoft JhengHei", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", "Microsoft JhengHei", system-ui, sans-serif;
 }
 /* ---- 淺色（預設） ---- */
 :root, :root[data-theme="light"]{
@@ -271,6 +271,8 @@ body:not(.authed) .legend{ display:none; }
 .add-row .track{ background:transparent; }
 
 .empty{ padding:44px 24px; text-align:center; color:var(--muted); font-size:15px; }
+.empty svg{ width:42px; height:42px; opacity:.4; display:block; margin:0 auto 10px; }
+.mini svg{ width:15px; height:15px; }
 
 /* legend */
 .legend{ display:flex; gap:16px; flex-wrap:wrap; margin:6px 16px 22px; padding:10px 16px;
@@ -349,8 +351,12 @@ body:not(.authed) .legend{ display:none; }
 .kpi-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
 .kpi{ background:var(--panel); border:.5px solid var(--line); border-radius:14px; padding:16px 18px;
   border-left:4px solid var(--line-strong); box-shadow:0 1px 3px rgba(0,0,0,.05); }
+.kpi-head{ display:flex; align-items:center; justify-content:space-between; }
+.kpi-head svg{ width:18px; height:18px; opacity:.9; }
 .kpi-l{ font-size:13px; color:var(--muted); font-weight:500; }
-.kpi-v{ font-size:29px; font-weight:700; margin-top:5px; line-height:1.05; letter-spacing:-.02em; }
+.kpi-v{ font-size:29px; font-weight:700; margin-top:6px; line-height:1.05; letter-spacing:-.02em; }
+.kpi.k-blue .kpi-head svg{ color:#0a84ff; } .kpi.k-green .kpi-head svg{ color:#34c759; }
+.kpi.k-amber .kpi-head svg{ color:#ff9500; } .kpi.k-red .kpi-head svg{ color:#ff453a; } .kpi.k-slate .kpi-head svg{ color:#8e8e93; }
 .kpi.k-blue{ border-left-color:#0a84ff; } .kpi.k-green{ border-left-color:#34c759; }
 .kpi.k-amber{ border-left-color:#ff9500; } .kpi.k-red{ border-left-color:#ff453a; } .kpi.k-slate{ border-left-color:#8e8e93; }
 .dash-card{ background:var(--panel); border:.5px solid var(--line); border-radius:14px; padding:16px 18px;
