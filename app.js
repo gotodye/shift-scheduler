@@ -373,6 +373,15 @@ function renderGrid(){
   nc.onclick = () => openPersonModal();
   const tk = document.createElement('div'); tk.className='track';
   ar.appendChild(nc); ar.appendChild(tk); grid.appendChild(ar);
+
+  // 目前時間指示線（僅在檢視「今天」時）
+  if(ppl.length && curDate === todayKey()){
+    const now = new Date(); const mins = now.getHours()*60 + now.getMinutes();
+    const nl = document.createElement('div'); nl.className='now-line';
+    nl.style.left = 'calc(var(--name-w) + 1px + ' + (mins * (slotPx()/30)) + 'px)';
+    nl.innerHTML = '<span class="now-dot"></span>';
+    grid.appendChild(nl);
+  }
 }
 
 function personRow(p){
