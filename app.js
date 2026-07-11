@@ -925,10 +925,19 @@ function buildBonusData(from, to, unitIds){
   }
   return { detail, totals: Object.values(totals) };
 }
+/* 步驟一：預覽 */
 $('#expGo').onclick = ()=>{
   const from = $('#expFrom').value, to = $('#expTo').value;
   if(!from || !to){ showErr('#expErr', t('exp_err_dates')); return; }
   if(to < from){ showErr('#expErr', t('exp_err_order')); return; }
+  $('#expErr').hidden = true;
+  const has = renderExpPreview();
+  if(!has){ showErr('#expErr', t('exp_err_empty')); }
+  $('#expConfirm').hidden = !has;   // 有內容才顯示「確認匯出」
+};
+/* 步驟二：確認匯出 */
+$('#expConfirm').onclick = ()=>{
+  const from = $('#expFrom').value, to = $('#expTo').value;
   const unitIds = $('#expAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   const { rows, warns } = buildRows(from, to, unitIds);
   if(rows.length===0){ showErr('#expErr', t('exp_err_empty')); return; }
@@ -936,8 +945,7 @@ $('#expGo').onclick = ()=>{
   const ws = XLSX.utils.aoa_to_sheet([APOLLO_HEADER, ...rows]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '匯入檔');
-  const fname = `班表匯入_${from.replace(/-/g,'')}_${to.replace(/-/g,'')}.xlsx`;
-  XLSX.writeFile(wb, fname);
+  XLSX.writeFile(wb, `班表匯入_${from.replace(/-/g,'')}_${to.replace(/-/g,'')}.xlsx`);
   closeModal('#exportModal');
   if(warns.length) alert(t('exp_done_warn') + '\n' + warns.join('\n'));
 };
@@ -988,18 +996,18 @@ $('#addPerson').onclick = ()=> openPersonModal();
 $('#applyAll').onclick = applyTemplateAll;
 $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
 $('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
-$('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; showModal('#exportModal'); renderExpPreview(); };
+$('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; resetExpStep(); showModal('#exportModal'); };
 
 /* 匯出前預覽：列出即將寫入阿波羅的每一筆 */
 function renderExpPreview(){
-  const box = $('#expPreview'); if(!box) return;
+  const box = $('#expPreview'); if(!box) return false;
   const from = $('#expFrom').value, to = $('#expTo').value;
-  if(!from || !to || to < from){ box.hidden = true; return; }
+  if(!from || !to || to < from){ box.hidden = true; return false; }
   const unitIds = $('#expAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
   const { rows } = buildRows(from, to, unitIds);
   const bonusMin = buildBonusData(from, to, unitIds).totals.reduce((a,r)=>a+r.min, 0);
   const heading = `<div class="exp-preview-h"><i data-lucide="eye"></i>${t('exp_preview')}</div>`;
-  if(!rows.length){ box.innerHTML = heading + `<div class="exp-empty">${t('exp_preview_empty')}</div>`; box.hidden=false; drawIcons(); return; }
+  if(!rows.length){ box.innerHTML = heading + `<div class="exp-empty">${t('exp_preview_empty')}</div>`; box.hidden=false; drawIcons(); return false; }
   const bodyRows = rows.map(r=>{
     const leave = r[3]===STATUS_LEAVE;
     const time = leave ? `<span class="pv-off">${t('off')}</span>`
@@ -1012,9 +1020,12 @@ function renderExpPreview(){
     + `</div>`
     + `<div class="exp-tbl-wrap"><table class="cmp-table exp-tbl"><thead><tr><th>${t('bh_name')}</th><th>${t('th_date')}</th><th>${t('th_time')}</th></tr></thead><tbody>${bodyRows}</tbody></table></div>`;
   box.hidden = false; drawIcons();
+  return true;
 }
-['#expFrom','#expTo'].forEach(s=> $(s).addEventListener('change', renderExpPreview));
-$('#expAllUnits').addEventListener('change', renderExpPreview);
+/* 改日期/單位 → 需重新預覽，隱藏預覽與確認鈕 */
+function resetExpStep(){ $('#expPreview').hidden = true; $('#expConfirm').hidden = true; }
+['#expFrom','#expTo'].forEach(s=> $(s).addEventListener('change', resetExpStep));
+$('#expAllUnits').addEventListener('change', resetExpStep);
 
 function openBonus(){ if(!isAdmin) return; $('#bonusFrom').value=curDate; $('#bonusTo').value=curDate; $('#bonusErr').hidden=true; showModal('#bonusModal'); }
 $('#bonusGo').onclick = ()=>{
