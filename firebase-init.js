@@ -3,8 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, setDoc, deleteDoc, getDoc, onSnapshot,
-         addDoc, serverTimestamp, query, orderBy, limit }
+         collection, doc, setDoc, deleteDoc, getDoc, getDocs, onSnapshot,
+         addDoc, serverTimestamp, query, where, orderBy, limit, Timestamp }
   from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -56,6 +56,18 @@ window.SB = {
   writeUser(email, data){ return setDoc(doc(db, "users", email.toLowerCase()), data).catch(e=>alert(tt('um_save_fail','儲存使用者失敗：')+e.message)); },
   deleteUser(email){ return deleteDoc(doc(db, "users", email.toLowerCase())).catch(e=>console.warn(e)); },
   writeLog(entry){ return addDoc(collection(db, "logs"), Object.assign({}, entry, { at: serverTimestamp() })).catch(e=>console.warn("writeLog", e)); },
+  async purgeLogsBefore(ms){                                     // 刪除 ms(毫秒) 之前的舊紀錄（管理者）
+    const cut = Timestamp.fromMillis(ms);
+    let total = 0;
+    while(true){
+      const snap = await getDocs(query(collection(db, "logs"), where("at", "<", cut), limit(300)));
+      if(snap.empty) break;
+      await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      total += snap.size;
+      if(snap.size < 300) break;
+    }
+    return total;
+  },
 };
 
 // 即時同步

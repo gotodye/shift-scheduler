@@ -1685,10 +1685,47 @@ function logTarget(e){
   if(e.from) parts.push('← ' + e.from.slice(5).replace('-','/'));
   return parts.join(' · ');
 }
+function fmtLogTimeFull(ts){
+  let d = null;
+  if(ts && typeof ts.toDate === 'function') d = ts.toDate();
+  else if(ts && ts.seconds) d = new Date(ts.seconds*1000);
+  if(!d) return '';
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function logTargetPlain(e){
+  const parts = [];
+  if(e.person) parts.push(e.person);
+  if(e.tpl) parts.push(e.tpl);
+  if(e.date) parts.push(e.date);
+  if(e.from) parts.push('← ' + e.from);
+  return parts.join(' · ');
+}
+function filteredLogs(){
+  const q = ($('#logSearch').value || '').trim().toLowerCase();
+  const unit = $('#logUnit').value || '';
+  const date = $('#logDate').value || '';
+  return logsList.filter(e=>{
+    if(unit && e.unit !== unit) return false;
+    if(date && e.date !== date) return false;
+    if(q){
+      const hay = [e.byName, e.by, e.person, t('log_'+e.action)].filter(Boolean).join(' ').toLowerCase();
+      if(hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+}
+function fillLogUnitSel(){
+  const sel = $('#logUnit'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">${t('log_all_units')}</option>` + visibleUnits().map(u=>`<option value="${u.id}">${esc(unitName(u.id))}</option>`).join('');
+  sel.value = cur;
+}
 function renderLog(){
   const box = $('#logBody'); if(!box) return;
-  if(!logsList.length){ box.innerHTML = `<div class="empty">${t('log_none')}</div>`; return; }
-  box.innerHTML = logsList.map(e=>{
+  const list = filteredLogs();
+  if(!list.length){ box.innerHTML = `<div class="empty">${t('log_none')}</div>`; return; }
+  box.innerHTML = list.map(e=>{
     const icon = LOG_ICON[e.action] || 'circle';
     const tg = logTarget(e);
     return `<div class="log-item"><div class="log-ic"><i data-lucide="${icon}"></i></div>`
@@ -1698,10 +1735,31 @@ function renderLog(){
   }).join('');
   drawIcons();
 }
-function openLog(){ if(!isAdmin) return; logOpen=true; $('#logView').hidden=false; renderLog(); }
+function openLog(){ if(!isAdmin) return; logOpen=true; fillLogUnitSel(); $('#logView').hidden=false; renderLog(); }
 function closeLog(){ logOpen=false; $('#logView').hidden=true; }
 $('#logBtn').onclick = openLog;
 $('#logBack').onclick = closeLog;
+$('#logSearch').oninput = ()=>{ if(logOpen) renderLog(); };
+$('#logUnit').onchange = ()=>{ if(logOpen) renderLog(); };
+$('#logDate').onchange = ()=>{ if(logOpen) renderLog(); };
+$('#logExport').onclick = ()=>{
+  if(typeof XLSX === 'undefined'){ alert(t('xlsx_missing')); return; }
+  const list = filteredLogs(); if(!list.length) return;
+  const head = [t('bh_date'), t('log_by'), t('log_action_col'), t('bh_unit'), t('log_target_col')];
+  const aoa = [head, ...list.map(e=>[ fmtLogTimeFull(e.at), e.byName||e.by||'', t('log_'+e.action), unitName(e.unit)||'', logTargetPlain(e) ])];
+  const ws = XLSX.utils.aoa_to_sheet(aoa); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t('log_title').slice(0,31));
+  XLSX.writeFile(wb, '編輯紀錄_' + todayKey().replace(/-/g,'') + '.xlsx');
+};
+$('#logPurge').onclick = async ()=>{
+  if(!isAdmin || !window.SB || !window.SB.purgeLogsBefore) return;
+  const days = +$('#logRetain').value || 90;
+  if(!confirm(t('log_purge_confirm', { days }))) return;
+  try{
+    const n = await window.SB.purgeLogsBefore(Date.now() - days*86400000);
+    showToast(t('log_purged', { n }));
+  }catch(e){ alert(t('log_purge_fail') + e.message); }
+};
 
 /* 左側導覽軌 */
 function backToGrid(){

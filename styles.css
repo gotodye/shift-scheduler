@@ -180,6 +180,8 @@ body:not(.authed) .legend{ display:none; }
 .toast-undo:active{ transform:scale(.96); }
 
 /* 編輯紀錄 */
+.log-search{ padding:7px 12px; border:1px solid var(--line-strong); border-radius:10px; background:var(--elev); color:var(--ink); font-size:13px; min-width:150px; flex:1; max-width:230px; }
+.log-sel, .log-date{ padding:6px 8px; border:1px solid var(--line-strong); border-radius:9px; background:var(--elev); color:var(--ink); font-size:13px; }
 .log-list{ max-width:720px; margin:0 auto; }
 .log-item{ display:flex; gap:13px; align-items:flex-start; padding:12px 4px; border-bottom:1px solid var(--line); }
 .log-item:last-child{ border-bottom:none; }
