@@ -179,6 +179,17 @@ body:not(.authed) .legend{ display:none; }
   padding:6px 14px; border-radius:20px; cursor:pointer; }
 .toast-undo:active{ transform:scale(.96); }
 
+/* 使用說明 */
+.help-wrap{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+.help-card{ background:var(--panel); border:none; border-radius:20px; padding:18px 20px; box-shadow:var(--sh1);
+  transition:transform .2s ease, box-shadow .2s ease; }
+.help-card:hover{ transform:translateY(-2px); box-shadow:var(--sh2); }
+.help-h{ display:flex; align-items:center; gap:10px; font-weight:600; font-size:16px; letter-spacing:-.01em; margin-bottom:12px; }
+.help-h svg{ width:19px; height:19px; color:var(--accent); flex:none; }
+.help-list{ margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; }
+.help-list li{ font-size:14px; line-height:1.55; color:var(--ink); }
+.help-list li::marker{ color:var(--accent); }
+
 /* 編輯紀錄 */
 .log-search{ padding:7px 12px; border:1px solid var(--line-strong); border-radius:10px; background:var(--elev); color:var(--ink); font-size:13px; min-width:150px; flex:1; max-width:230px; }
 .log-sel, .log-date{ padding:6px 8px; border:1px solid var(--line-strong); border-radius:9px; background:var(--elev); color:var(--ink); font-size:13px; }

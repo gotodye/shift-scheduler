@@ -1664,6 +1664,21 @@ $$('[data-menu]').forEach(m => {
 });
 document.addEventListener('click', () => $$('[data-menu]').forEach(x => x.classList.remove('open')));
 
+/* ---------- 使用說明 ---------- */
+let helpOpen = false;
+function renderHelp(){
+  const box = $('#helpBody'); if(!box) return;
+  const secs = (window.HELP && window.HELP[getLang()]) || (window.HELP && window.HELP.zh) || [];
+  box.innerHTML = secs.map(s =>
+    `<div class="help-card"><div class="help-h"><i data-lucide="${s.icon}"></i>${esc(s.t)}</div>`
+    + `<ul class="help-list">${s.items.map(it=>`<li>${esc(it)}</li>`).join('')}</ul></div>`).join('');
+  drawIcons();
+}
+function openHelp(){ helpOpen=true; $('#helpView').hidden=false; renderHelp(); }
+function closeHelp(){ helpOpen=false; $('#helpView').hidden=true; }
+$('#helpBtn').onclick = openHelp;
+$('#helpBack').onclick = closeHelp;
+
 /* ---------- 編輯紀錄檢視（管理者） ---------- */
 let logOpen = false;
 const LOG_ICON = { seg_create:'plus', seg_edit:'pencil', seg_delete:'trash-2', toggle_leave:'bed',
@@ -1767,6 +1782,7 @@ function backToGrid(){
   if(statsOpen){ statsOpen=false; $('#statsView').hidden=true; }
   if(compareOpen){ compareOpen=false; $('#compareView').hidden=true; }
   if(logOpen) closeLog();
+  if(helpOpen) closeHelp();
   if(monthOpen) closeMonthView();
   setActiveNav();
 }
@@ -1809,6 +1825,8 @@ function applyThemePref(v){
 $$('.lang-sel').forEach(s => { s.value = getLang(); s.onchange = (e)=> setLang(e.target.value); });
 window.onLangChange = function(){
   if(!$('#userModal').hidden) renderUserMgmt();
+  if(helpOpen) renderHelp();
+  if(logOpen){ fillLogUnitSel(); renderLog(); }
   if(weekOpen) renderWeek();
   if(rosterOpen) renderRoster();
   if(monthOpen) renderMonth();
