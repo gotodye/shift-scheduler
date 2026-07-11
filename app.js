@@ -988,7 +988,33 @@ $('#addPerson').onclick = ()=> openPersonModal();
 $('#applyAll').onclick = applyTemplateAll;
 $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
 $('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
-$('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; showModal('#exportModal'); };
+$('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; showModal('#exportModal'); renderExpPreview(); };
+
+/* 匯出前預覽：列出即將寫入阿波羅的每一筆 */
+function renderExpPreview(){
+  const box = $('#expPreview'); if(!box) return;
+  const from = $('#expFrom').value, to = $('#expTo').value;
+  if(!from || !to || to < from){ box.hidden = true; return; }
+  const unitIds = $('#expAllUnits').checked ? visibleUnits().map(u=>u.id) : [curUnit];
+  const { rows } = buildRows(from, to, unitIds);
+  const bonusMin = buildBonusData(from, to, unitIds).totals.reduce((a,r)=>a+r.min, 0);
+  const heading = `<div class="exp-preview-h"><i data-lucide="eye"></i>${t('exp_preview')}</div>`;
+  if(!rows.length){ box.innerHTML = heading + `<div class="exp-empty">${t('exp_preview_empty')}</div>`; box.hidden=false; drawIcons(); return; }
+  const bodyRows = rows.map(r=>{
+    const leave = r[3]===STATUS_LEAVE;
+    const time = leave ? `<span class="pv-off">${t('off')}</span>`
+      : `${r[5]}–${r[6]}` + (r[7]?` <span class="pv-brk">(${t('tpl_break')} ${esc(r[7])})</span>`:'');
+    return `<tr><td>${esc(r[1])}</td><td>${r[2]}</td><td>${time}</td></tr>`;
+  }).join('');
+  box.innerHTML = heading
+    + `<div class="exp-sum"><span class="exp-cnt">${rows.length} ${t('exp_rows')}</span>`
+    + (bonusMin>0 ? `<span class="exp-note"><i data-lucide="gift"></i>${t('tip_over')} ${fmtHrs(bonusMin)}h · ${t('exp_preview_note')}</span>` : '')
+    + `</div>`
+    + `<div class="exp-tbl-wrap"><table class="cmp-table exp-tbl"><thead><tr><th>${t('bh_name')}</th><th>${t('th_date')}</th><th>${t('th_time')}</th></tr></thead><tbody>${bodyRows}</tbody></table></div>`;
+  box.hidden = false; drawIcons();
+}
+['#expFrom','#expTo'].forEach(s=> $(s).addEventListener('change', renderExpPreview));
+$('#expAllUnits').addEventListener('change', renderExpPreview);
 
 function openBonus(){ if(!isAdmin) return; $('#bonusFrom').value=curDate; $('#bonusTo').value=curDate; $('#bonusErr').hidden=true; showModal('#bonusModal'); }
 $('#bonusGo').onclick = ()=>{
@@ -1488,7 +1514,13 @@ function renderRoster(){
   const R=rosterData(); $('#rosterLabel').textContent=monthLabel(R.y,R.m);
   const dayHeads=R.dates.map(d=>{ const dow=new Date(d+'T00:00:00').getDay(); return `<th class="${(dow===0||dow===6)?'wke':''}">${d.slice(8)}<br><span class="rd">${dowLabel(dow)}</span></th>`; }).join('');
   const body=R.rows.map(r=>`<tr><td class="rn">${esc(r.name)}</td>`+r.cells.map((c,i)=>{ const dow=new Date(R.dates[i]+'T00:00:00').getDay(); return `<td class="${(dow===0||dow===6)?'wke':''}">${esc(c)}</td>`; }).join('')+`</tr>`).join('');
-  $('#rosterBody').innerHTML=`<table class="cmp-table roster-table"><thead><tr><th class="rn">${t('bh_name')}</th>${dayHeads}</tr></thead><tbody>${body||''}</tbody></table>`;
+  const scope = $('#rosterAllUnits').checked ? t('exp_all_units') : unitName(curUnit);
+  const phead = `<div class="print-only roster-print-head">`
+    + `<div class="rph-title">${t('roster_title')}</div>`
+    + `<div class="rph-meta"><span>${monthLabel(R.y,R.m)}</span><span>${esc(scope)}</span>`
+    + `<span>${t('print_generated')} ${todayKey().replace(/-/g,'/')}</span></div></div>`;
+  const pfoot = `<div class="print-only roster-print-foot">${t('roster_title')} · ${monthLabel(R.y,R.m)} · ${t('roster_people')} ${R.rows.length}</div>`;
+  $('#rosterBody').innerHTML=phead+`<table class="cmp-table roster-table"><thead><tr><th class="rn">${t('bh_name')}</th>${dayHeads}</tr></thead><tbody>${body||''}</tbody></table>`+pfoot;
 }
 $('#rosterBack').onclick=closeRoster;
 $('#rosterAllUnits').onchange=()=>{ if(rosterOpen) renderRoster(); };

@@ -143,6 +143,24 @@ body:not(.authed) .legend{ display:none; }
 .seg-tip-row svg{ width:13px; height:13px; color:var(--accent); }
 .seg-tip-over{ color:var(--danger); font-weight:600; margin-top:4px; }
 .seg-tip-over svg{ width:13px; height:13px; }
+
+/* 匯出前預覽 */
+.exp-preview{ margin-top:14px; }
+.exp-preview-h{ display:flex; align-items:center; gap:7px; font-weight:600; font-size:13px; color:var(--ink); margin-bottom:9px; }
+.exp-preview-h svg{ width:15px; height:15px; color:var(--accent); }
+.exp-sum{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+.exp-cnt{ font-size:12px; font-weight:700; color:var(--accent); background:var(--accent-bg); padding:3px 12px; border-radius:20px; }
+.exp-note{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:#c98a2b; }
+.exp-note svg{ width:13px; height:13px; }
+.exp-tbl-wrap{ max-height:230px; overflow:auto; border-radius:14px; border:.5px solid var(--glass-brd); background:var(--fill); }
+.exp-tbl{ font-size:12px; width:100%; }
+.exp-tbl th{ position:sticky; top:0; background:var(--panel); z-index:1; font-size:11px; color:var(--muted); font-weight:600; }
+.exp-tbl th, .exp-tbl td{ padding:6px 12px; text-align:left; white-space:nowrap; }
+.exp-tbl tbody tr:nth-child(even){ background:rgba(0,0,0,.02); }
+:root[data-theme="dark"] .exp-tbl tbody tr:nth-child(even){ background:rgba(255,255,255,.03); }
+.pv-off{ color:#c98a2b; font-weight:600; }
+.pv-brk{ color:var(--muted); font-size:11px; }
+.exp-empty{ font-size:13px; color:var(--muted); padding:16px; text-align:center; }
 .top-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
 /* 左側毛玻璃導覽軌 */
@@ -483,14 +501,30 @@ body:not(.authed) .legend{ display:none; }
 .roster-table td.rn, .roster-table th.rn{ text-align:left; position:sticky; left:0; background:var(--panel); z-index:1; }
 .roster-table th.wke, .roster-table td.wke{ background:var(--warn-bg); }
 
+.print-only{ display:none; }
+
 @media print{
+  @page{ size:A4 landscape; margin:11mm 9mm 12mm; }
   body{ background:#fff; }
   body *{ visibility:hidden; }
   #rosterView, #rosterView *{ visibility:visible; }
   #rosterView{ position:absolute; inset:0; height:auto; display:block; overflow:visible; }
   .no-print{ display:none !important; }
-  .roster-table{ font-size:9px; }
-  .roster-table th, .roster-table td{ padding:2px 3px; border:1px solid #ccc; }
+  .print-only{ display:block; }
+  /* 頁首 */
+  .roster-print-head{ margin-bottom:9px; border-bottom:1.5px solid #333; padding-bottom:6px; }
+  .rph-title{ font-size:16px; font-weight:700; letter-spacing:.5px; }
+  .rph-meta{ display:flex; gap:18px; font-size:10px; color:#555; margin-top:4px; }
+  /* 表格分頁 */
+  .roster-table{ font-size:9px; width:100%; border-collapse:collapse; }
+  .roster-table thead{ display:table-header-group; }   /* 每頁重複表頭 */
+  .roster-table tr{ break-inside:avoid; page-break-inside:avoid; }
+  .roster-table th, .roster-table td{ padding:2px 3px; border:1px solid #bbb; }
+  .roster-table td.rn, .roster-table th.rn{ position:static; }   /* 取消 sticky，避免列印疊字 */
+  .roster-table th.wke, .roster-table td.wke{ background:#efe9d8 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .roster-table thead th{ background:#f0f0f0 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  /* 頁尾 */
+  .roster-print-foot{ margin-top:9px; padding-top:5px; border-top:1px solid #ccc; font-size:8.5px; color:#888; text-align:center; }
 }
 
 .day-cell{ gap:6px; }
