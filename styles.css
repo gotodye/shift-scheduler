@@ -550,13 +550,23 @@ body:not(.authed) .legend{ display:none; }
   .units{ display:flex; flex-wrap:nowrap; overflow-x:auto; max-width:calc(100vw - 24px); margin:12px 12px 2px; padding:3px; gap:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .units::-webkit-scrollbar{ display:none; }
   .unit-tab{ padding:6px 12px; font-size:13px; white-space:nowrap; flex:none; }
-  /* 工具列：可收合，手機預設收起 */
-  .toolbar{ flex-direction:column; align-items:stretch; padding:10px 12px; gap:12px; }
+  /* 工具列：可收合，手機預設收起；展開內容整齊排列 */
+  .toolbar{ flex-direction:column; align-items:stretch; padding:12px 14px; gap:14px; margin:12px 12px 0; }
   .tb-toggle{ display:flex; }
-  .toolbar.collapsed{ gap:0; padding:8px 12px; }
+  .toolbar.collapsed{ gap:0; padding:12px 14px; }
   .toolbar.collapsed .tpl-area, .toolbar.collapsed .brush, .toolbar.collapsed .tool-btns{ display:none; }
-  .tool-btns{ margin-left:0; }
-  .grid-wrap{ padding:0 8px 12px; }
+  .toolbar:not(.collapsed) .tb-toggle{ margin-bottom:2px; border-bottom:1px solid var(--line); padding-bottom:10px; }
+  .tpl-area{ flex-direction:column; align-items:stretch; gap:8px; }
+  .tpl-chips{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .tpl-chip{ text-align:center; }
+  .brush{ align-self:stretch; }
+  .brush .brush-btn{ flex:1; padding:8px 0; }
+  .tool-btns{ display:flex; flex-direction:column; gap:8px; margin-left:0; }
+  .tool-btns > *, .tool-btns .menu-btn{ width:100%; }
+  .tool-btns .btn{ justify-content:center; }
+  /* 格線滿版：消除左側 sticky 姓名欄的內距縫隙（會露出捲動班塊） */
+  .grid-wrap{ padding:0 0 12px; }
+  .grid{ border-radius:0; border-left:none; border-right:none; margin-top:8px; }
   .legend{ display:none; }   /* 說明文字（滑鼠操作導向）手機隱藏 */
   .mini{ width:30px; height:30px; }
   .modal-mask{ align-items:flex-end; }
