@@ -990,7 +990,7 @@ $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
 $('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
 $('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; showModal('#exportModal'); };
 
-$('#bonusBtn').onclick = ()=>{ if(!isAdmin) return; $('#bonusFrom').value=curDate; $('#bonusTo').value=curDate; $('#bonusErr').hidden=true; showModal('#bonusModal'); };
+function openBonus(){ if(!isAdmin) return; $('#bonusFrom').value=curDate; $('#bonusTo').value=curDate; $('#bonusErr').hidden=true; showModal('#bonusModal'); }
 $('#bonusGo').onclick = ()=>{
   if(!isAdmin) return;
   const from = $('#bonusFrom').value, to = $('#bonusTo').value;
@@ -1042,7 +1042,7 @@ function punchMin(v){
   return m ? (+m[1]*60 + +m[2]) : null;
 }
 
-$('#compareBtn').onclick = ()=> $('#punchFile').click();
+function openCompare(){ $('#punchFile').click(); }
 $('#punchFile').onchange = (e)=>{
   const f = e.target.files[0]; if(!f) return;
   if(typeof XLSX==='undefined'){ alert(t('xlsx_missing')); return; }
@@ -1373,7 +1373,7 @@ function renderStats(){
     });
   }
 }
-$('#statsBtn').onclick = ()=>{ const r = monthRange(curDate); $('#statsFrom').value=r[0]; $('#statsTo').value=r[1]; statsOpen=true; $('#statsView').hidden=false; renderStats(); };
+function openStats(){ const r = monthRange(curDate); $('#statsFrom').value=r[0]; $('#statsTo').value=r[1]; statsOpen=true; $('#statsView').hidden=false; renderStats(); }
 $('#statsBack').onclick = ()=>{ statsOpen=false; $('#statsView').hidden=true; };
 $('#statsFrom').onchange = ()=>{ if(statsOpen) renderStats(); };
 $('#statsTo').onchange = ()=>{ if(statsOpen) renderStats(); };
@@ -1421,7 +1421,7 @@ function renderWeek(){
   $('#weekTable').innerHTML = `<thead><tr>${heads}</tr></thead><tbody>${body||''}</tbody>`;
   $$('#weekTable .wk-cell').forEach(td=> td.onclick=()=>{ curDate=td.dataset.date; save(); closeWeekView(); renderGrid(); });
 }
-$('#weekBtn').onclick=openWeekView; $('#weekBack').onclick=closeWeekView;
+$('#weekBack').onclick=closeWeekView;
 $('#weekPrev').onclick=()=>{ weekMon=addDaysKey(weekMon,-7); renderWeek(); };
 $('#weekNext').onclick=()=>{ weekMon=addDaysKey(weekMon,7); renderWeek(); };
 
@@ -1490,7 +1490,7 @@ function renderRoster(){
   const body=R.rows.map(r=>`<tr><td class="rn">${esc(r.name)}</td>`+r.cells.map((c,i)=>{ const dow=new Date(R.dates[i]+'T00:00:00').getDay(); return `<td class="${(dow===0||dow===6)?'wke':''}">${esc(c)}</td>`; }).join('')+`</tr>`).join('');
   $('#rosterBody').innerHTML=`<table class="cmp-table roster-table"><thead><tr><th class="rn">${t('bh_name')}</th>${dayHeads}</tr></thead><tbody>${body||''}</tbody></table>`;
 }
-$('#rosterBtn').onclick=openRoster; $('#rosterBack').onclick=closeRoster;
+$('#rosterBack').onclick=closeRoster;
 $('#rosterAllUnits').onchange=()=>{ if(rosterOpen) renderRoster(); };
 $('#rosterPrev').onclick=()=>{ let m=rosterYM.m-1,y=rosterYM.y; if(m<0){m=11;y--;} rosterYM={y,m}; renderRoster(); };
 $('#rosterNext').onclick=()=>{ let m=rosterYM.m+1,y=rosterYM.y; if(m>11){m=0;y++;} rosterYM={y,m}; renderRoster(); };
@@ -1516,18 +1516,21 @@ $$('[data-menu]').forEach(m => {
 document.addEventListener('click', () => $$('[data-menu]').forEach(x => x.classList.remove('open')));
 
 /* 左側導覽軌 */
+function backToGrid(){
+  if(weekOpen) closeWeekView(); if(rosterOpen) closeRoster();
+  if(statsOpen){ statsOpen=false; $('#statsView').hidden=true; }
+  if(compareOpen){ compareOpen=false; $('#compareView').hidden=true; }
+  if(monthOpen) closeMonthView();
+}
 $$('.sr-btn').forEach(b => b.onclick = ()=>{
   const a = b.dataset.sr;
-  if(a==='week') $('#weekBtn').click();
-  else if(a==='roster') $('#rosterBtn').click();
-  else if(a==='stats') $('#statsBtn').click();
-  else if(a==='signout') $('#signoutBtn').click();
-  else if(a==='grid'){
-    if(weekOpen) closeWeekView(); if(rosterOpen) closeRoster();
-    if(statsOpen){ statsOpen=false; $('#statsView').hidden=true; }
-    if(compareOpen){ compareOpen=false; $('#compareView').hidden=true; }
-    if(monthOpen) closeMonthView();
-  }
+  if(a==='week') openWeekView();
+  else if(a==='roster') openRoster();
+  else if(a==='stats') openStats();
+  else if(a==='compare') openCompare();
+  else if(a==='bonus') openBonus();
+  else if(a==='signout'){ if(window.SB) window.SB.signOut(); }
+  else if(a==='grid') backToGrid();
 });
 
 /* ---------- 主題（自動/淺/深） ---------- */
