@@ -430,7 +430,8 @@ body:not(.authed) .legend{ display:none; }
 .dash{ display:flex; flex-direction:column; gap:16px; padding:4px 0 24px; }
 .kpi-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
 .kpi{ background:var(--panel); border:none; border-radius:20px; padding:16px 18px; box-shadow:var(--sh1);
-  display:flex; align-items:center; gap:14px; }
+  display:flex; align-items:center; gap:14px; transition:transform .2s ease, box-shadow .2s ease; }
+.kpi:hover{ transform:translateY(-3px); box-shadow:var(--sh2); }
 .kpi-ic{ width:48px; height:48px; border-radius:15px; flex:none; display:flex; align-items:center; justify-content:center; }
 .kpi-ic svg{ width:23px; height:23px; }
 .kpi-body{ min-width:0; }
@@ -444,7 +445,23 @@ body:not(.authed) .legend{ display:none; }
 .kpi.k-blue{ border-left-color:#0a84ff; } .kpi.k-green{ border-left-color:#34c759; }
 .kpi.k-amber{ border-left-color:#ff9500; } .kpi.k-red{ border-left-color:#ff453a; } .kpi.k-slate{ border-left-color:#8e8e93; }
 .dash-card{ background:var(--panel); border:none; border-radius:20px; padding:18px 20px;
-  overflow-x:auto; box-shadow:var(--sh1); }
+  overflow-x:auto; box-shadow:var(--sh1); transition:transform .2s ease, box-shadow .2s ease; }
+.dash-card:hover{ transform:translateY(-3px); box-shadow:var(--sh2); }
+
+/* 統計頁進場動畫（交錯淡入上升；fill 用 backwards 讓 hover transform 之後仍有效） */
+@keyframes cardIn{ from{ opacity:0; transform:translateY(14px) scale(.99); } to{ opacity:1; transform:none; } }
+#statsBody .kpi, #statsBody .dash-card{ animation:cardIn .42s cubic-bezier(.2,.7,.2,1) backwards; }
+#statsBody .kpi:nth-child(1){ animation-delay:.02s; }
+#statsBody .kpi:nth-child(2){ animation-delay:.06s; }
+#statsBody .kpi:nth-child(3){ animation-delay:.10s; }
+#statsBody .kpi:nth-child(4){ animation-delay:.14s; }
+#statsBody .kpi:nth-child(5){ animation-delay:.18s; }
+#statsBody .dash-card:nth-child(2){ animation-delay:.10s; }
+#statsBody .dash-card:nth-child(3){ animation-delay:.16s; }
+#statsBody .dash-card:nth-child(4){ animation-delay:.22s; }
+#statsBody .dash-card:nth-child(5){ animation-delay:.28s; }
+#statsBody .dash-card:nth-child(6){ animation-delay:.34s; }
+@media (prefers-reduced-motion:reduce){ #statsBody .kpi, #statsBody .dash-card{ animation:none; } }
 .dash-h{ font-weight:600; margin-bottom:16px; letter-spacing:-.01em; display:flex; align-items:center; gap:9px; font-size:15px; }
 .dash-h svg{ width:18px; height:18px; color:var(--accent); }
 .vio-row{ display:flex; gap:28px; flex-wrap:wrap; }
