@@ -32,8 +32,8 @@ const APOLLO_HEADER = [
 ];
 
 /* 每個單位一個色，方便辨識 */
-const UNIT_COLOR = { ID:'#007aff', VN:'#34c759', TH:'#ff9500', PH:'#af52de', KYC:'#ff2d55' };
-const OVER_COLOR = '#ff3b30';   // 超標工時的顏色
+const UNIT_COLOR = { ID:'#7a8af1', VN:'#67cdb4', TH:'#f6ad55', PH:'#a78bfa', KYC:'#f48fb1' };
+const OVER_COLOR = '#f2748a';   // 超標工時（柔和珊瑚紅）
 
 /* 常用班別範本（管理員首次登入、範本為空時自動建立，可自行增刪修改） */
 const DEFAULT_TEMPLATES = [
@@ -1284,8 +1284,8 @@ function renderStats(){
     _statsChart = new Chart($('#statsChart'), {
       type:'bar',
       data:{ labels:data.map(r=>r.name), datasets:[
-        { label:t('bh_clock'), data:data.map(r=>Math.round(r.clock/60*10)/10), backgroundColor:'#0a84ff', borderRadius:6, borderSkipped:false, categoryPercentage:.62, barPercentage:.86 },
-        { label:t('bh_bonus'), data:data.map(r=>Math.round(r.bonus/60*10)/10), backgroundColor:'#ff453a', borderRadius:6, borderSkipped:false, categoryPercentage:.62, barPercentage:.86 }
+        { label:t('bh_clock'), data:data.map(r=>Math.round(r.clock/60*10)/10), backgroundColor:'#7a8af1', borderRadius:8, borderSkipped:false, categoryPercentage:.6, barPercentage:.82 },
+        { label:t('bh_bonus'), data:data.map(r=>Math.round(r.bonus/60*10)/10), backgroundColor:'#67cdb4', borderRadius:8, borderSkipped:false, categoryPercentage:.6, barPercentage:.82 }
       ]},
       options:{ responsive:true, maintainAspectRatio:false, scales:scales(true), plugins:{ legend, tooltip:tip } }
     });
@@ -1301,9 +1301,9 @@ function renderStats(){
     _trendChart = new Chart($('#trendChart'), {
       type:'line',
       data:{ labels:mos.map(mm=>monthLabel(mm.y,mm.m)), datasets:[
-        line(t('bh_actual'), tr.map(x=>Math.round(x.actual/60*10)/10), '#8e8e93', true),
-        line(t('bh_clock'),  tr.map(x=>Math.round(x.clock/60*10)/10),  '#0a84ff', false),
-        line(t('bh_bonus'),  tr.map(x=>Math.round(x.bonus/60*10)/10),  '#ff453a', false)
+        line(t('bh_actual'), tr.map(x=>Math.round(x.actual/60*10)/10), '#9aa6bd', true),
+        line(t('bh_clock'),  tr.map(x=>Math.round(x.clock/60*10)/10),  '#7a8af1', true),
+        line(t('bh_bonus'),  tr.map(x=>Math.round(x.bonus/60*10)/10),  '#67cdb4', false)
       ]},
       options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false }, scales:scales(false), plugins:{ legend, tooltip:tip } }
     });
@@ -1450,6 +1450,21 @@ $$('[data-menu]').forEach(m => {
   m.querySelectorAll('.menu-keep').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
 });
 document.addEventListener('click', () => $$('[data-menu]').forEach(x => x.classList.remove('open')));
+
+/* 左側導覽軌 */
+$$('.sr-btn').forEach(b => b.onclick = ()=>{
+  const a = b.dataset.sr;
+  if(a==='week') $('#weekBtn').click();
+  else if(a==='roster') $('#rosterBtn').click();
+  else if(a==='stats') $('#statsBtn').click();
+  else if(a==='signout') $('#signoutBtn').click();
+  else if(a==='grid'){
+    if(weekOpen) closeWeekView(); if(rosterOpen) closeRoster();
+    if(statsOpen){ statsOpen=false; $('#statsView').hidden=true; }
+    if(compareOpen){ compareOpen=false; $('#compareView').hidden=true; }
+    if(monthOpen) closeMonthView();
+  }
+});
 
 /* ---------- 主題（自動/淺/深） ---------- */
 function applyThemePref(v){

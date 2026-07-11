@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=15">
 <script>try{var _t=localStorage.getItem('ss.theme');if(_t==='light'||_t==='dark')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -44,6 +44,17 @@
 </div>
 
 <input type="file" id="punchFile" accept=".xlsx,.xls,.csv" hidden>
+
+<aside class="siderail">
+  <div class="sr-logo"><i data-lucide="calendar-check-2"></i></div>
+  <nav class="sr-nav">
+    <button class="sr-btn" data-sr="grid" title="排班"><i data-lucide="layout-grid"></i></button>
+    <button class="sr-btn" data-sr="week" title="週檢視"><i data-lucide="calendar-range"></i></button>
+    <button class="sr-btn" data-sr="roster" title="月班表"><i data-lucide="calendar-days"></i></button>
+    <button class="sr-btn" data-sr="stats" title="統計"><i data-lucide="bar-chart-3"></i></button>
+  </nav>
+  <button class="sr-btn sr-bottom" data-sr="signout" title="登出"><i data-lucide="log-out"></i></button>
+</aside>
 
 <header class="topbar">
   <div class="brand"><span class="dot"></span> <span class="brand-txt" data-i18n="app_title">排班系統</span></div>
@@ -380,8 +391,8 @@
   </div>
 </div>
 
-<script src="i18n.js?v=14"></script>
-<script src="app.js?v=14"></script>
-<script type="module" src="firebase-init.js?v=14"></script>
+<script src="i18n.js?v=15"></script>
+<script src="app.js?v=15"></script>
+<script type="module" src="firebase-init.js?v=15"></script>
 </body>
 </html>
