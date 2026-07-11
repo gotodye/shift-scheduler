@@ -1231,7 +1231,7 @@ function renderStats(){
   if(!data.length){ box.innerHTML = '<div class="empty">'+t('stats_none')+'</div>'; return; }
 
   const sum = data.reduce((a,r)=>{ a.actual+=r.actual; a.clock+=r.clock; a.bonus+=r.bonus; a.vio+=r.vioDays; a.o8+=r.over8; a.cs+=r.consec; a.wo+=r.weekOver; return a; }, {actual:0,clock:0,bonus:0,vio:0,o8:0,cs:0,wo:0});
-  const kpi = (label,val,cls,icon)=> `<div class="kpi ${cls}"><div class="kpi-head"><span class="kpi-l">${label}</span><i data-lucide="${icon}"></i></div><div class="kpi-v">${val}</div></div>`;
+  const kpi = (label,val,cls,icon)=> `<div class="kpi ${cls}"><div class="kpi-ic"><i data-lucide="${icon}"></i></div><div class="kpi-body"><div class="kpi-l">${label}</div><div class="kpi-v">${val}</div></div></div>`;
   const kpis = '<div class="kpi-row">'
     + kpi(t('dash_people'), data.length, 'k-blue', 'users')
     + kpi(t('bh_actual'), fmtHrs(sum.actual), 'k-slate', 'clock')
@@ -1240,14 +1240,14 @@ function renderStats(){
     + kpi(t('dash_vio_days'), sum.vio, 'k-red', 'alert-triangle')
     + '</div>';
 
-  const vio = `<div class="dash-card"><div class="dash-h">${t('dash_vio_title')}</div><div class="vio-row">`
+  const vio = `<div class="dash-card"><div class="dash-h"><i data-lucide="shield-alert"></i>${t('dash_vio_title')}</div><div class="vio-row">`
     + `<div class="vio"><span class="vio-n">${sum.o8}</span>${t('vio_over8')} <span class="vio-u">${t('unit_days')}</span></div>`
     + `<div class="vio"><span class="vio-n">${sum.cs}</span>${t('vio_consec')} <span class="vio-u">${t('unit_days')}</span></div>`
     + `<div class="vio"><span class="vio-n">${sum.wo}</span>${t('vio_week')} <span class="vio-u">${t('unit_weeks')}</span></div>`
     + `</div></div>`;
 
-  const chart = `<div class="dash-card"><div class="dash-h">${t('dash_chart')}</div><div class="chart-wrap"><canvas id="statsChart"></canvas></div></div>`;
-  const trendCard = `<div class="dash-card"><div class="dash-h">${t('trend_title')}</div><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>`;
+  const chart = `<div class="dash-card"><div class="dash-h"><i data-lucide="bar-chart-3"></i>${t('dash_chart')}</div><div class="chart-wrap"><canvas id="statsChart"></canvas></div></div>`;
+  const trendCard = `<div class="dash-card"><div class="dash-h"><i data-lucide="trending-up"></i>${t('trend_title')}</div><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>`;
 
   const heads = [t('bh_unit'),t('bh_emp'),t('bh_name'),t('st_workdays'),t('bh_actual'),t('bh_clock'),t('bh_bonus'),t('st_vio'),t('st_leavedays')];
   const rowsHtml = data.map(r => `<tr><td>${esc(r.unit)}</td><td>${esc(r.emp)}</td><td>${esc(r.name)}${r.student?' <span class="stu">'+esc(t('foreign_student'))+'</span>':''}</td><td>${r.workDays}</td><td>${fmtHrs(r.actual)}</td><td>${fmtHrs(r.clock)}</td><td>${fmtHrs(r.bonus)}</td><td>${r.vioDays?('<b class="over-n">'+r.vioDays+'</b>'):'0'}</td><td>${r.leave}</td></tr>`).join('');
@@ -1260,7 +1260,7 @@ function renderStats(){
     if(weeks.length){
       const wh = `<th>${t('bh_name')}</th>` + weeks.map(w=>`<th>${w.slice(5)}</th>`).join('');
       const wb = students.map(r=> `<tr><td>${esc(r.name)}</td>` + weeks.map(w=>{ const mins=r.weeks[w]||0; const h=mins/60; return `<td class="${h>20?'wk-over':''}">${mins?fmtHrs(mins):''}</td>`; }).join('') + `</tr>`).join('');
-      stuHtml = `<div class="dash-card"><div class="dash-h">${t('dash_student_week')}（${t('st_week')}）</div><table class="cmp-table"><thead><tr>${wh}</tr></thead><tbody>${wb}</tbody></table></div>`;
+      stuHtml = `<div class="dash-card"><div class="dash-h"><i data-lucide="graduation-cap"></i>${t('dash_student_week')}（${t('st_week')}）</div><table class="cmp-table"><thead><tr>${wh}</tr></thead><tbody>${wb}</tbody></table></div>`;
     }
   }
 
