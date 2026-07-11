@@ -1,0 +1,17 @@
+{
+  "name": "排班系統",
+  "short_name": "排班",
+  "description": "多單位排班、勞動條件檢核與阿波羅打卡匯出",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#e9edf5",
+  "theme_color": "#7a8af1",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

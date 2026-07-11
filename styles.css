@@ -67,7 +67,8 @@ body{ margin:0; background:var(--bg); color:var(--ink); font-size:14px;
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; letter-spacing:-0.01em; }
 *{ box-sizing: border-box; }
 body{ margin:0; background:var(--bg); color:var(--ink); font-size:14px;
-  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; letter-spacing:-0.01em; }
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; letter-spacing:-0.01em;
+  -webkit-tap-highlight-color:transparent; overscroll-behavior-y:none; }
 
 /* 登入 / 權限 gate */
 body:not(.authed) .topbar,
@@ -540,7 +541,7 @@ body:not(.authed) .legend{ display:none; }
   .name-cell .emp{ display:none; }
   .name-cell .nm{ font-size:14px; }
   .cov-row .who .emp, .cov-row .who .nm{ display:block; font-size:11px; }
-  .topbar{ gap:8px; padding:8px 10px; flex-wrap:wrap; }
+  .topbar{ gap:8px; padding:calc(8px + env(safe-area-inset-top)) 10px 8px; flex-wrap:wrap; }
   .brand-txt{ display:none; }
   .weekday{ display:none; }
   .date-nav{ gap:6px; }
