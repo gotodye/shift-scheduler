@@ -33,6 +33,7 @@ const APOLLO_HEADER = [
 
 /* 每個單位一個色，方便辨識 */
 const UNIT_COLOR = { ID:'#007aff', VN:'#34c759', TH:'#ff9500', PH:'#af52de', KYC:'#ff2d55' };
+const OVER_COLOR = '#ff3b30';   // 超標工時的顏色
 
 /* 常用班別範本（管理員首次登入、範本為空時自動建立，可自行增刪修改） */
 const DEFAULT_TEMPLATES = [
@@ -430,24 +431,33 @@ function buildTrack(date, personId){
   const day = getDay(date, personId);
   const track = document.createElement('div'); track.className='track';
   track.dataset.person = personId; track.dataset.date = date;
-  day.off.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'off', idx, seg)));
-  day.work.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'work', idx, seg)));
-  // 超出法定範圍的工時 → 紅色標示（純提醒、不影響操作）
   const info = computeSplit(personId)[date];
-  if(info && info.bonus > 0){
-    clipWork(day.work, info.clock/30).bonus.forEach(seg=>{
-      const o = document.createElement('div'); o.className='over'; positionSeg(o, seg);
-      o.title = t('bh_bonus') + '：' + reasonText(info.reasons);
-      track.appendChild(o);
-    });
-  }
+  const split = (info && info.bonus > 0) ? clipWork(day.work, info.clock/30) : null;
+  day.off.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'off', idx, seg, null, null)));
+  day.work.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'work', idx, seg, split, info)));
   track.addEventListener('pointerdown', (ev)=> startPaint(ev, date, personId, track));
   return track;
 }
 
-function segEl(date, personId, type, idx, seg){
+/* 一段工時的背景：一般＝單位色，超標＝紅色（同一塊用漸層分色，無斜線無邊框） */
+function overlapMin(seg, ranges){ let n=0; (ranges||[]).forEach(r=>{ const a=Math.max(seg[0],r[0]), b=Math.min(seg[1],r[1]); if(b>a) n+=(b-a); }); return n; }
+function workBg(seg, split){
+  const unit = UNIT_COLOR[curUnit] || '#007aff';
+  if(!split) return unit;
+  const len = seg[1]-seg[0];
+  const clk = overlapMin(seg, split.clock);
+  if(clk >= len) return unit;
+  if(clk <= 0) return OVER_COLOR;
+  const pct = Math.round(clk/len*1000)/10;
+  return `linear-gradient(90deg, ${unit} 0 ${pct}%, ${OVER_COLOR} ${pct}% 100%)`;
+}
+
+function segEl(date, personId, type, idx, seg, split, info){
   const el = document.createElement('div'); el.className = 'seg' + (type==='off' ? ' off' : '');
-  if(type==='work') el.style.background = UNIT_COLOR[curUnit] || '#2f6fed';
+  if(type==='work'){
+    el.style.background = workBg(seg, split);
+    if(split && info && overlapMin(seg, split.bonus) > 0) el.title = t('bh_bonus') + '：' + reasonText(info.reasons);
+  }
   positionSeg(el, seg);
   const full = seg[0] <= 0 && seg[1] >= SLOTS;
   const lbl = type==='off'
@@ -1258,26 +1268,44 @@ function renderStats(){
   drawIcons();
 
   if(typeof Chart !== 'undefined'){
+    const rc = getComputedStyle(document.documentElement);
+    const tickC = (rc.getPropertyValue('--muted')||'#8e8e93').trim();
+    const gridC = (rc.getPropertyValue('--line')||'rgba(0,0,0,.1)').trim();
+    const inkC  = (rc.getPropertyValue('--ink')||'#111').trim();
+    Chart.defaults.font.family = "-apple-system, Inter, 'Segoe UI', sans-serif";
+    Chart.defaults.color = tickC;
+    const legend = { position:'top', align:'end', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, boxHeight:8, color:inkC, padding:16 } };
+    const tip = { padding:12, cornerRadius:12, usePointStyle:true, boxPadding:6, titleColor:inkC, bodyColor:inkC, backgroundColor:(rc.getPropertyValue('--panel')||'#fff').trim(), borderColor:gridC, borderWidth:1 };
+    const scales = st => ({
+      x:{ stacked:!!st, grid:{ display:false }, ticks:{ color:tickC }, border:{ display:false } },
+      y:{ stacked:!!st, beginAtZero:true, grid:{ color:gridC, drawTicks:false }, ticks:{ color:tickC, padding:8, precision:0 }, border:{ display:false } }
+    });
+
     _statsChart = new Chart($('#statsChart'), {
       type:'bar',
       data:{ labels:data.map(r=>r.name), datasets:[
-        { label:t('bh_clock'), data:data.map(r=>Math.round(r.clock/60*10)/10), backgroundColor:'#2f6fed' },
-        { label:t('bh_bonus'), data:data.map(r=>Math.round(r.bonus/60*10)/10), backgroundColor:'#d64545' }
+        { label:t('bh_clock'), data:data.map(r=>Math.round(r.clock/60*10)/10), backgroundColor:'#0a84ff', borderRadius:6, borderSkipped:false, categoryPercentage:.62, barPercentage:.86 },
+        { label:t('bh_bonus'), data:data.map(r=>Math.round(r.bonus/60*10)/10), backgroundColor:'#ff453a', borderRadius:6, borderSkipped:false, categoryPercentage:.62, barPercentage:.86 }
       ]},
-      options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{stacked:true}, y:{stacked:true, beginAtZero:true} }, plugins:{ legend:{position:'top'} } }
+      options:{ responsive:true, maintainAspectRatio:false, scales:scales(true), plugins:{ legend, tooltip:tip } }
     });
-    // 跨月趨勢（近6個月）
+
     const toD=new Date(to+'T00:00:00'); const mos=[];
     for(let k=5;k>=0;k--){ const d=new Date(toD.getFullYear(), toD.getMonth()-k, 1); mos.push({y:d.getFullYear(), m:d.getMonth()}); }
     const tr=mos.map(mm=>monthTotals(mm.y, mm.m, unitIds));
+    const ctx = $('#trendChart').getContext('2d');
+    const grad = hex => { const g=ctx.createLinearGradient(0,0,0,280); g.addColorStop(0, hex+'42'); g.addColorStop(1, hex+'00'); return g; };
+    const line = (label, arr, color, fill) => ({ label, data:arr, borderColor:color, backgroundColor: fill?grad(color):color,
+      pointBackgroundColor:color, pointBorderColor:(rc.getPropertyValue('--panel')||'#fff').trim(), pointBorderWidth:2,
+      pointRadius:0, pointHoverRadius:5, borderWidth:2.6, tension:.4, fill:!!fill });
     _trendChart = new Chart($('#trendChart'), {
       type:'line',
       data:{ labels:mos.map(mm=>monthLabel(mm.y,mm.m)), datasets:[
-        { label:t('bh_actual'), data:tr.map(x=>Math.round(x.actual/60*10)/10), borderColor:'#64748b', backgroundColor:'#64748b', tension:.3 },
-        { label:t('bh_clock'),  data:tr.map(x=>Math.round(x.clock/60*10)/10),  borderColor:'#2f6fed', backgroundColor:'#2f6fed', tension:.3 },
-        { label:t('bh_bonus'),  data:tr.map(x=>Math.round(x.bonus/60*10)/10),  borderColor:'#d64545', backgroundColor:'#d64545', tension:.3 }
+        line(t('bh_actual'), tr.map(x=>Math.round(x.actual/60*10)/10), '#8e8e93', true),
+        line(t('bh_clock'),  tr.map(x=>Math.round(x.clock/60*10)/10),  '#0a84ff', false),
+        line(t('bh_bonus'),  tr.map(x=>Math.round(x.bonus/60*10)/10),  '#ff453a', false)
       ]},
-      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{beginAtZero:true} }, plugins:{ legend:{position:'top'} } }
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false }, scales:scales(false), plugins:{ legend, tooltip:tip } }
     });
   }
 }
