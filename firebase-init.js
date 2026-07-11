@@ -3,7 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, setDoc, deleteDoc, getDoc, onSnapshot }
+         collection, doc, setDoc, deleteDoc, getDoc, onSnapshot,
+         addDoc, serverTimestamp, query, orderBy, limit }
   from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -54,10 +55,11 @@ window.SB = {
   deleteTemplate(id){ return deleteDoc(doc(db, "templates", id)).catch(e=>console.warn(e)); },
   writeUser(email, data){ return setDoc(doc(db, "users", email.toLowerCase()), data).catch(e=>alert(tt('um_save_fail','儲存使用者失敗：')+e.message)); },
   deleteUser(email){ return deleteDoc(doc(db, "users", email.toLowerCase())).catch(e=>console.warn(e)); },
+  writeLog(entry){ return addDoc(collection(db, "logs"), Object.assign({}, entry, { at: serverTimestamp() })).catch(e=>console.warn("writeLog", e)); },
 };
 
 // 即時同步
-const store = { people:[], templates:[], shifts:[], users:[] };
+const store = { people:[], templates:[], shifts:[], users:[], logs:[] };
 let tplLoaded = false;
 let listening = false;
 function push(){
@@ -66,15 +68,20 @@ function push(){
     templates: store.templates,
     shifts: store.shifts.map(s => ({ date:s.date, personId:s.personId, work:fromDocs(s.work), off:fromDocs(s.off) })),
     users: store.users,
+    logs: store.logs,
     tplReady: tplLoaded,           // templates 首次載入後才允許自動建立/去重
   });
 }
-function startListeners(){
+function startListeners(admin){
   if(listening) return; listening = true;
   onSnapshot(collection(db, "people"),    qs => { store.people    = qs.docs.map(d => ({ id:d.id, ...d.data() })); push(); }, e => console.warn("people", e));
   onSnapshot(collection(db, "templates"), qs => { store.templates = qs.docs.map(d => ({ id:d.id, ...d.data() })); tplLoaded = true; push(); }, e => console.warn("templates", e));
   onSnapshot(collection(db, "shifts"),    qs => { store.shifts    = qs.docs.map(d => ({ ...d.data() }));          push(); }, e => console.warn("shifts", e));
   onSnapshot(collection(db, "users"),     qs => { store.users     = qs.docs.map(d => ({ email:d.id, ...d.data() })); push(); }, e => console.warn("users", e));
+  if(admin){                                                                                     // 編輯紀錄僅管理者可讀
+    onSnapshot(query(collection(db, "logs"), orderBy("at","desc"), limit(200)),
+      qs => { store.logs = qs.docs.map(d => ({ id:d.id, ...d.data() })); push(); }, e => console.warn("logs", e));
+  }
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -95,7 +102,7 @@ onAuthStateChanged(auth, async (user) => {
       email, name: user.displayName || email, photo: user.photoURL || "",
       admin, units: admin ? window.UNIT_IDS : (ud.units || []),
     });
-    startListeners();
+    startListeners(admin);
   }catch(e){
     alert(tt('access_fail','讀取權限失敗：') + e.message);
     window.onSignedOut && window.onSignedOut();

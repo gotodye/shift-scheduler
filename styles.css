@@ -179,6 +179,19 @@ body:not(.authed) .legend{ display:none; }
   padding:6px 14px; border-radius:20px; cursor:pointer; }
 .toast-undo:active{ transform:scale(.96); }
 
+/* 編輯紀錄 */
+.log-list{ max-width:720px; margin:0 auto; }
+.log-item{ display:flex; gap:13px; align-items:flex-start; padding:12px 4px; border-bottom:1px solid var(--line); }
+.log-item:last-child{ border-bottom:none; }
+.log-ic{ width:34px; height:34px; flex:none; border-radius:11px; background:var(--fill); color:var(--accent);
+  display:flex; align-items:center; justify-content:center; }
+.log-ic svg{ width:17px; height:17px; }
+.log-main{ min-width:0; flex:1; }
+.log-line{ font-size:14px; color:var(--ink); line-height:1.4; }
+.log-line b{ font-weight:600; }
+.log-tg{ color:var(--muted); }
+.log-time{ font-size:12px; color:var(--muted); margin-top:2px; }
+
 /* 載入骨架 */
 @keyframes shimmer{ 0%{ background-position:-500px 0; } 100%{ background-position:500px 0; } }
 .skeleton{ padding:14px 16px; }

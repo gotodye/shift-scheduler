@@ -69,9 +69,11 @@ let brushType = 'work';        // 拖拉筆刷：'work' 上班 / 'off' 休假
 
 /* 權限 */
 let myEmail = '';
+let myName = '';
 let isAdmin = false;
 let myUnits = [];              // 可編輯的單位代碼
 let usersList = [];            // 使用者清單（管理用）
+let logsList = [];             // 編輯紀錄（管理用）
 function canEdit(unitId){ return isAdmin || myUnits.indexOf(unitId) >= 0; }
 function visibleUnits(){ return isAdmin ? UNITS : UNITS.filter(u => myUnits.indexOf(u.id) >= 0); }
 
@@ -116,6 +118,8 @@ function applyCloudSnapshot(d){
   (d.shifts||[]).forEach(s => { if(!sched[s.date]) sched[s.date] = {}; sched[s.date][s.personId] = { work:s.work||[], off:s.off||[] }; });
   state.schedule = sched;
   usersList = d.users || [];
+  logsList = d.logs || logsList;
+  if(logOpen) renderLog();
   clearSplitCache();
   scheduleRender();
 }
@@ -201,10 +205,11 @@ function scheduleRender(){
 
 /* 由 Firebase 模組呼叫：設定登入者權限 */
 function setAccess(a){
-  myEmail = a.email; isAdmin = a.admin; myUnits = a.units || [];
+  myEmail = a.email; myName = a.name || a.email; isAdmin = a.admin; myUnits = a.units || [];
   if(myUnits.indexOf(curUnit) < 0 && !isAdmin){ curUnit = myUnits[0] || 'ID'; }
   const chip = $('#userChip'); if(chip){ chip.textContent = (a.name||a.email) + (isAdmin?t('admin_paren'):''); }
   $('#userMgmtBtn').hidden = !isAdmin;
+  $('#logBtn').hidden = !isAdmin;
   $('#bonusBtn').hidden = !isAdmin;
   $('#bootView').hidden = true; $('#loginView').hidden = true; $('#noAccessView').hidden = true;
   document.body.classList.add('authed');
@@ -611,9 +616,11 @@ function onDragUp(ev){
     day[d.type] = normalize([...day[d.type], [a,b]]);
     day[other] = subtractRange(day[other], [a,b]);
     setDay(d.date, d.personId, day);
+    logAction('seg_create', { person:pName(d.personId), date:d.date });
     refreshView();
   } else if(d.mode==='move' || d.mode==='resize'){
     if(!d.moved){ openSegModal(d.date, d.personId, d.type, d.idx); refreshView(); return; }
+    logAction('seg_edit', { person:pName(d.personId), date:d.date });
     const day = cloneDay(getDay(d.date, d.personId));
     const r = d._new || day[d.type][d.idx];
     day[d.type][d.idx] = r;
@@ -632,6 +639,7 @@ function toggleLeave(date, personId){
   } else {
     setDay(date, personId, { work: [], off: [[0, SLOTS]] });
   }
+  logAction('toggle_leave', { person:pName(personId), date });
   refreshView();
 }
 
@@ -659,6 +667,7 @@ function applyTemplateAll(){
     if(isFullOff(day)) return;                 // 整日休假者略過
     setDay(curDate, p.id, { work: templateSegs(tp), off: subtractRange(day.off, templateSpan(tp)) });
   });
+  logAction('apply_all', { date:curDate, tpl:tplLabel(tp.name) });
   renderGrid();
 }
 
@@ -763,6 +772,7 @@ function clearMonth(){
   const pid = monthCtx.personId;
   const backup = monthDates().map(date=>({ date, day: cloneDay(getDay(date, pid)) }));
   monthDates().forEach(date => setDay(date, pid, { work:[], off:[] }));
+  logAction('clear_month', { person:pName(pid) });
   renderMonth();
   showToast(t('cleared_month'), ()=>{ backup.forEach(b=> setDay(b.date, pid, b.day)); renderMonth(); });
 }
@@ -798,6 +808,7 @@ function openPersonModal(p){
         }
         state.people[curUnit] = state.people[curUnit].filter(x=>x.id!==p.id);
         Object.values(state.schedule).forEach(d=> delete d[p.id]);
+        logAction('person_del', { person:p.name });
         save(); closeModal('#personModal');
         if(monthOpen) closeMonthView(); else renderAll();
       }
@@ -813,8 +824,8 @@ $('#pmSave').onclick = ()=>{
   const dup = (state.people[curUnit]||[]).some(x => x.empNo===empNo && x!==editingPerson);
   if(dup){ showErr('#pmErr', t('pm_err_dup')); return; }
   const foreign = $('#pmForeign').checked;
-  if(editingPerson){ editingPerson.empNo=empNo; editingPerson.name=name; editingPerson.foreignStudent=foreign; if(window.SB) window.SB.writePerson(editingPerson); }
-  else { const np={ id:pid(), unitId:curUnit, empNo, name, foreignStudent:foreign }; state.people[curUnit].push(np); if(window.SB) window.SB.writePerson(np); }
+  if(editingPerson){ editingPerson.empNo=empNo; editingPerson.name=name; editingPerson.foreignStudent=foreign; if(window.SB) window.SB.writePerson(editingPerson); logAction('person_edit', { person:name }); }
+  else { const np={ id:pid(), unitId:curUnit, empNo, name, foreignStudent:foreign }; state.people[curUnit].push(np); if(window.SB) window.SB.writePerson(np); logAction('person_add', { person:name }); }
   save(); closeModal('#personModal'); renderAll(); if(monthOpen) renderMonth();
 };
 
@@ -862,12 +873,14 @@ $('#segSave').onclick = ()=>{
   const other = newType==='work' ? 'off' : 'work';
   day[other] = subtractRange(day[other], [s,e]);               // 另一類型挖掉重疊
   setDay(segCtx.date, segCtx.personId, day);
+  logAction(segCtx.create?'seg_create':'seg_edit', { person:pName(segCtx.personId), date:segCtx.date });
   closeModal('#segModal'); refreshView();
 };
 $('#segDelete').onclick = ()=>{
   const day = cloneDay(getDay(segCtx.date, segCtx.personId));
   day[segCtx.type].splice(segCtx.idx, 1);
   setDay(segCtx.date, segCtx.personId, day);
+  logAction('seg_delete', { person:pName(segCtx.personId), date:segCtx.date });
   closeModal('#segModal'); refreshView();
 };
 
@@ -907,8 +920,16 @@ $('#copyGo').onclick = ()=>{
       setDay(curDate, p.id, cloneDay(getDay(src, p.id)));
     });
   });
+  logAction('copy_day', { date:curDate, from:src });
   closeModal('#copyModal'); renderAll();
 };
+
+/* ---------- 編輯紀錄 ---------- */
+function logAction(action, extra){
+  if(!window.SB || !window.SB.writeLog || !myEmail) return;
+  window.SB.writeLog(Object.assign({ by:myEmail, byName:myName, action, unit:curUnit }, extra||{}));
+}
+function pName(id){ const p = findPerson(id); return p ? p.name : id; }
 
 /* ---------- 提示條 + 復原 ---------- */
 let _toastTimer = null;
@@ -932,6 +953,7 @@ $('#clearDay').onclick = ()=>{
   const people = state.people[curUnit] || [];
   const backup = people.map(p=>({ id:p.id, day: cloneDay(getDay(curDate, p.id)) }));
   people.forEach(p=> setDay(curDate, p.id, { work:[], off:[] }));
+  logAction('clear_day', { date:curDate });
   renderGrid();
   showToast(t('cleared_day'), ()=>{ backup.forEach(b=> setDay(curDate, b.id, b.day)); renderGrid(); });
 };
@@ -1516,6 +1538,7 @@ $('#copyWeek').onclick = ()=>{
   const mon = weekKeyOf(curDate);
   for(let i=0;i<7;i++){ const date=addDaysKey(mon,i), src=addDaysKey(date,-7);
     (state.people[curUnit]||[]).forEach(p=> setDay(date, p.id, cloneDay(getDay(src, p.id)))); }
+  logAction('copy_week', { date:mon });
   renderGrid();
 };
 
@@ -1641,11 +1664,51 @@ $$('[data-menu]').forEach(m => {
 });
 document.addEventListener('click', () => $$('[data-menu]').forEach(x => x.classList.remove('open')));
 
+/* ---------- 編輯紀錄檢視（管理者） ---------- */
+let logOpen = false;
+const LOG_ICON = { seg_create:'plus', seg_edit:'pencil', seg_delete:'trash-2', toggle_leave:'bed',
+  clear_day:'trash-2', clear_month:'trash-2', copy_day:'copy', copy_week:'copy-plus', apply_all:'wand-2',
+  person_add:'user-plus', person_edit:'user', person_del:'user-minus' };
+function fmtLogTime(ts){
+  let d = null;
+  if(ts && typeof ts.toDate === 'function') d = ts.toDate();
+  else if(ts && ts.seconds) d = new Date(ts.seconds*1000);
+  if(!d) return '…';
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function logTarget(e){
+  const parts = [];
+  if(e.person) parts.push(esc(e.person));
+  if(e.tpl) parts.push(esc(e.tpl));
+  if(e.date) parts.push(e.date.slice(5).replace('-','/'));
+  if(e.from) parts.push('← ' + e.from.slice(5).replace('-','/'));
+  return parts.join(' · ');
+}
+function renderLog(){
+  const box = $('#logBody'); if(!box) return;
+  if(!logsList.length){ box.innerHTML = `<div class="empty">${t('log_none')}</div>`; return; }
+  box.innerHTML = logsList.map(e=>{
+    const icon = LOG_ICON[e.action] || 'circle';
+    const tg = logTarget(e);
+    return `<div class="log-item"><div class="log-ic"><i data-lucide="${icon}"></i></div>`
+      + `<div class="log-main"><div class="log-line"><b>${esc(e.byName||e.by||'')}</b> ${esc(t('log_'+e.action))}`
+      + (tg ? ` <span class="log-tg">${tg}</span>` : '') + `</div>`
+      + `<div class="log-time">${esc(unitName(e.unit)||'')}${e.unit?' · ':''}${fmtLogTime(e.at)}</div></div></div>`;
+  }).join('');
+  drawIcons();
+}
+function openLog(){ if(!isAdmin) return; logOpen=true; $('#logView').hidden=false; renderLog(); }
+function closeLog(){ logOpen=false; $('#logView').hidden=true; }
+$('#logBtn').onclick = openLog;
+$('#logBack').onclick = closeLog;
+
 /* 左側導覽軌 */
 function backToGrid(){
   if(weekOpen) closeWeekView(); if(rosterOpen) closeRoster();
   if(statsOpen){ statsOpen=false; $('#statsView').hidden=true; }
   if(compareOpen){ compareOpen=false; $('#compareView').hidden=true; }
+  if(logOpen) closeLog();
   if(monthOpen) closeMonthView();
   setActiveNav();
 }

@@ -15,5 +15,10 @@ service cloud.firestore {
     match /people/{id}    { allow read, write: if isUser(); }
     match /templates/{id} { allow read, write: if isUser(); }
     match /shifts/{id}    { allow read, write: if isUser(); }
+    match /logs/{id} {                                    // 編輯紀錄：任何使用者可新增(限本人)，僅管理者可讀/清理，不可竄改
+      allow create: if isUser() && request.resource.data.by == em();
+      allow read, delete: if isAdmin();
+      allow update: if false;
+    }
   }
 }
