@@ -32,7 +32,7 @@ const APOLLO_HEADER = [
 ];
 
 /* 每個單位一個色，方便辨識 */
-const UNIT_COLOR = { ID:'#2f6fed', VN:'#0f9d58', TH:'#d8632f', PH:'#8b3fd8', KYC:'#c0396b' };
+const UNIT_COLOR = { ID:'#007aff', VN:'#34c759', TH:'#ff9500', PH:'#af52de', KYC:'#ff2d55' };
 
 /* 常用班別範本（管理員首次登入、範本為空時自動建立，可自行增刪修改） */
 const DEFAULT_TEMPLATES = [
