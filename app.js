@@ -994,6 +994,22 @@ document.addEventListener('click', ()=> closeCal());
 
 $('#addPerson').onclick = ()=> openPersonModal();
 $('#applyAll').onclick = applyTemplateAll;
+/* 工具列收合（手機版預設收起，保持畫面簡潔） */
+function setToolbarCollapsed(c){
+  $('#toolbar').classList.toggle('collapsed', c);
+  $('#tbToggle').setAttribute('aria-expanded', c ? 'false' : 'true');
+}
+$('#tbToggle').onclick = ()=>{
+  const c = !$('#toolbar').classList.contains('collapsed');
+  setToolbarCollapsed(c);
+  try{ localStorage.setItem('tbCollapsed', c ? '1' : '0'); }catch(e){}
+};
+(function initToolbar(){
+  let pref; try{ pref = localStorage.getItem('tbCollapsed'); }catch(e){}
+  if(pref === null || pref === undefined) pref = (innerWidth <= 760) ? '1' : '0';   // 手機預設收起
+  setToolbarCollapsed(pref === '1');
+})();
+
 $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
 $('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
 $('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; resetExpStep(); showModal('#exportModal'); };
