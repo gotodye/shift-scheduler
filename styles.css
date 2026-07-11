@@ -122,8 +122,9 @@ body:not(.authed) .legend{ display:none; }
   border-radius:11px; flex-wrap:wrap; }
 .unit-tab{ cursor:pointer; padding:7px 15px; border:none; border-radius:8px; background:transparent;
   color:var(--ink); font-weight:500; transition:background .15s; }
-.unit-tab.active{ background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12), 0 1px 1px rgba(0,0,0,.04); }
+.unit-tab.active{ background:var(--ut, #007aff); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.18); }
 .unit-tab .cnt{ color:var(--muted); font-weight:400; margin-left:5px; font-size:12px; }
+.unit-tab.active .cnt{ color:rgba(255,255,255,.8); }
 
 /* toolbar */
 .toolbar{ display:flex; align-items:center; gap:16px; padding:10px 16px; background:var(--panel);

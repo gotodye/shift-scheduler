@@ -286,6 +286,7 @@ function renderTabs(){
     const cnt = (state.people[u.id]||[]).length;
     const b = document.createElement('button');
     b.className = 'unit-tab' + (u.id===curUnit?' active':'');
+    b.style.setProperty('--ut', UNIT_COLOR[u.id] || '#007aff');
     b.innerHTML = `${unitName(u.id)}<span class="cnt">${cnt}</span>`;
     b.onclick = () => { curUnit = u.id; activeTpl = null; save(); renderAll(); };
     el.appendChild(b);
