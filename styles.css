@@ -130,6 +130,19 @@ body:not(.authed) .legend{ display:none; }
 .cal-cell:hover:not(.blank){ background:var(--hover); }
 .cal-cell.today{ color:var(--accent); font-weight:700; }
 .cal-cell.sel{ background:linear-gradient(135deg,#8f9bf6,#7a8af1); color:#fff; box-shadow:0 4px 10px rgba(122,138,241,.4); }
+
+/* 班次 hover 資訊卡 */
+.seg-tip{ position:fixed; z-index:200; pointer-events:none; min-width:118px; max-width:240px;
+  padding:11px 14px; border-radius:15px;
+  background:var(--glass-menu); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border:.5px solid var(--glass-brd); box-shadow:var(--sh-pop); font-size:12px; color:var(--ink); animation:menuIn .14s ease; }
+.seg-tip[hidden]{ display:none; }
+.seg-tip-t{ font-weight:700; font-size:13px; margin-bottom:6px; letter-spacing:.2px; }
+.seg-tip-row,.seg-tip-over{ display:flex; align-items:center; gap:6px; line-height:1.5; }
+.seg-tip-row{ color:var(--muted); }
+.seg-tip-row svg{ width:13px; height:13px; color:var(--accent); }
+.seg-tip-over{ color:var(--danger); font-weight:600; margin-top:4px; }
+.seg-tip-over svg{ width:13px; height:13px; }
 .top-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
 /* 左側毛玻璃導覽軌 */

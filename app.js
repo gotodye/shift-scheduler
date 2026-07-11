@@ -455,10 +455,7 @@ function workBg(seg, split){
 
 function segEl(date, personId, type, idx, seg, split, info){
   const el = document.createElement('div'); el.className = 'seg' + (type==='off' ? ' off' : '');
-  if(type==='work'){
-    el.style.background = workBg(seg, split);
-    if(split && info && overlapMin(seg, split.bonus) > 0) el.title = t('bh_bonus') + '：' + reasonText(info.reasons);
-  }
+  if(type==='work') el.style.background = workBg(seg, split);
   positionSeg(el, seg);
   const full = seg[0] <= 0 && seg[1] >= SLOTS;
   const lbl = type==='off'
@@ -467,9 +464,47 @@ function segEl(date, personId, type, idx, seg, split, info){
   el.innerHTML = `<span class="lbl">${lbl}</span><span class="hd l"></span><span class="hd r"></span>`;
   el.querySelector('.hd.l').addEventListener('pointerdown', e=> startResize(e, date, personId, type, idx, 'l'));
   el.querySelector('.hd.r').addEventListener('pointerdown', e=> startResize(e, date, personId, type, idx, 'r'));
-  el.addEventListener('pointerdown', e=> startMove(e, date, personId, type, idx, el));
+  el.addEventListener('pointerdown', e=>{ hideTip(); startMove(e, date, personId, type, idx, el); });
+  el._tip = buildTipHTML(type, seg, split, info, full);
+  el.addEventListener('pointerenter', onSegEnter);
+  el.addEventListener('pointerleave', hideTip);
   return el;
 }
+
+/* ---------- 班次 hover 資訊卡 ---------- */
+function buildTipHTML(type, seg, split, info, full){
+  const range = slotToTime(seg[0]) + ' – ' + slotToTime(seg[1]);
+  if(type==='off') return `<div class="seg-tip-t">${t('tip_off')}${full?'':' · '+range}</div>`;
+  const hrs = fmtHrs((seg[1]-seg[0])*30);
+  let html = `<div class="seg-tip-t">${range}</div>`
+    + `<div class="seg-tip-row"><i data-lucide="clock"></i>${t('tip_hours')} ${hrs}h</div>`;
+  if(split && info){
+    const over = overlapMin(seg, split.bonus);
+    if(over > 0) html += `<div class="seg-tip-over"><i data-lucide="alert-triangle"></i>${t('tip_over')} ${fmtHrs(over*30)}h · ${reasonText(info.reasons)}</div>`;
+  }
+  return html;
+}
+let _segTip = null;
+function ensureTip(){
+  if(_segTip) return _segTip;
+  _segTip = document.createElement('div'); _segTip.className='seg-tip'; _segTip.hidden=true;
+  document.body.appendChild(_segTip);
+  window.addEventListener('scroll', hideTip, true);
+  return _segTip;
+}
+function onSegEnter(ev){
+  if((ev.pointerType && ev.pointerType!=='mouse') || drag) return;
+  const el = ev.currentTarget, tip = ensureTip();
+  tip.innerHTML = el._tip; tip.hidden = false; drawIcons();
+  const r = el.getBoundingClientRect();
+  tip.style.visibility='hidden';
+  const tr = tip.getBoundingClientRect();
+  let left = r.left + r.width/2 - tr.width/2;
+  left = Math.max(8, Math.min(left, innerWidth - tr.width - 8));
+  let top = r.top - tr.height - 10; if(top < 8) top = r.bottom + 10;
+  tip.style.left = left+'px'; tip.style.top = top+'px'; tip.style.visibility='visible';
+}
+function hideTip(){ if(_segTip) _segTip.hidden = true; }
 function positionSeg(el, seg){
   const w = slotPx();
   el.style.left = (seg[0]*w)+'px';
