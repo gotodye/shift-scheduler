@@ -146,6 +146,24 @@ function maybeSeedTemplates(){
       }
     });
   }
+  // v4：去除重複範本（多裝置同時首次載入造成的），並補正規化
+  if(!lsGet('ss.tpl.v4')){
+    lsSet('ss.tpl.v4');
+    const sig = t => {
+      let s=t.start, e=t.end, bs=t.bs||'', be=t.be||'';
+      if(t.name==='晚班' && s==='14:00' && e==='23:00'){ s='18:00'; e='22:00'; bs=''; be=''; }
+      if(t.name==='早班' && s==='09:00' && e==='18:00' && !bs){ bs='12:00'; be='13:00'; }
+      return [t.unitId, t.name, s, e, bs, be].join('|');
+    };
+    const seen = {};
+    state.templates.slice().sort((a,b)=> (a.id<b.id?-1:1)).forEach(t => {
+      const k = sig(t);
+      if(seen[k]){ if(window.SB) window.SB.deleteTemplate(t.id); return; }   // 重複 → 刪
+      seen[k] = 1;
+      if(t.name==='晚班' && t.start==='14:00' && t.end==='23:00' && window.SB) window.SB.writeTemplate(Object.assign({}, t, { start:'18:00', end:'22:00', bs:'', be:'' }));
+      else if(t.name==='早班' && t.start==='09:00' && t.end==='18:00' && !t.bs && window.SB) window.SB.writeTemplate(Object.assign({}, t, { bs:'12:00', be:'13:00' }));
+    });
+  }
 }
 
 /* 雲端快照可能連續進來（例如整月套用一次寫很多筆），用去抖動避免反覆重繪 */
@@ -371,7 +389,7 @@ function personRow(p){
   who.style.cursor='pointer'; who.title=t('title_edit_person');
   who.onclick = ()=> openMonthView(p.id);
   const mvBtn = document.createElement('button');
-  mvBtn.className='mini'; mvBtn.textContent=t('month_btn'); mvBtn.title=t('title_month');
+  mvBtn.className='mini mv-mini'; mvBtn.textContent=t('month_btn'); mvBtn.title=t('title_month');
   mvBtn.onclick = (e)=>{ e.stopPropagation(); openMonthView(p.id); };
   const leaveBtn = document.createElement('button');
   leaveBtn.className='mini'+(isFullOff(day)?' on':''); leaveBtn.textContent=t('off_short'); leaveBtn.title=t('title_full_leave');

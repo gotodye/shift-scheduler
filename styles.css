@@ -73,7 +73,11 @@ body:not(.authed) .legend{ display:none; }
 
 /* 手機響應式 */
 @media (max-width:760px){
-  :root{ --name-w:118px; --slot:22px; }
+  :root{ --name-w:132px; --slot:22px; }
+  .name-cell .mini.apply, .name-cell .mini.mv-mini{ display:none; }
+  .name-cell .emp{ display:none; }
+  .name-cell .nm{ font-size:14px; }
+  .cov-row .who .emp, .cov-row .who .nm{ display:block; font-size:11px; }
   .topbar{ gap:8px; padding:8px 10px; flex-wrap:wrap; }
   .brand-txt{ display:none; }
   .weekday{ display:none; }
