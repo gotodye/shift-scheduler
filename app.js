@@ -1180,16 +1180,20 @@ function renderCompare(){
   const shown = $('#cmpOnlyIssues').checked ? all.filter(x=>x.cls!=='ok') : all;
   lastCompareShown = shown;
   const n = c => all.filter(x=>x.cls===c).length;
-  $('#cmpSummary').innerHTML = t('cmp_count',{n:all.length}) + '　'
-    + `<span class="pill ok">${t('cmp_ok')} ${n('ok')}</span> `
-    + `<span class="pill bad">${t('cmp_bad')} ${n('bad')}</span> `
-    + `<span class="pill warn">${t('cmp_warn')} ${n('warn')}</span>`;
+  const kc = (label,val,cls,icon)=> `<div class="kpi ${cls}"><div class="kpi-ic"><i data-lucide="${icon}"></i></div><div class="kpi-body"><div class="kpi-l">${label}</div><div class="kpi-v">${val}</div></div></div>`;
+  $('#cmpSummary').innerHTML = '<div class="kpi-row cmp-kpis">'
+    + kc(t('cmp_total'), all.length, 'k-blue', 'list-checks')
+    + kc(t('cmp_ok'), n('ok'), 'k-green', 'badge-check')
+    + kc(t('cmp_bad'), n('bad'), 'k-red', 'x-circle')
+    + kc(t('cmp_warn'), n('warn'), 'k-amber', 'alert-triangle')
+    + '</div>';
   const body = shown.map(x =>
     `<tr class="c-${x.cls}"><td>${x.date}</td><td>${esc(x.emp)}</td><td>${esc(x.name)}</td><td>${esc(x.unit)}</td>`
     + `<td>${x.sched}</td><td>${x.actual}</td><td>${esc(x.status)}</td></tr>`).join('');
   $('#cmpTable').innerHTML =
     `<thead><tr><th>${t('th_date')}</th><th>${t('th_emp')}</th><th>${t('th_name')}</th><th>${t('th_unit')}</th><th>${t('th_sched')}</th><th>${t('th_actual')}</th><th>${t('th_verdict')}</th></tr></thead>`
     + '<tbody>' + (body || `<tr><td colspan="7" class="empty">${t('cmp_none')}</td></tr>`) + '</tbody>';
+  drawIcons();
 }
 
 $('#cmpBack').onclick = ()=>{ compareOpen=false; $('#compareView').hidden=true; };
