@@ -1445,7 +1445,8 @@ window.onLangChange = function(){
 };
 
 /* ---------- 初始化 ---------- */
-function renderAll(){ renderTabs(); renderTemplates(); renderGrid(); updateBrushHint(); }
+function drawIcons(){ if(window.lucide){ try{ lucide.createIcons(); }catch(e){} } }
+function renderAll(){ renderTabs(); renderTemplates(); renderGrid(); updateBrushHint(); drawIcons(); }
 fillTimeSelect($('#segStart')); fillTimeSelect($('#segEnd'));
 fillTimeSelect($('#tplStart')); fillTimeSelect($('#tplEnd'));
 fillTimeSelect($('#tplBs')); fillTimeSelect($('#tplBe'));
@@ -1453,5 +1454,6 @@ $('#tplBs').insertAdjacentHTML('afterbegin','<option value="">—</option>');
 $('#tplBe').insertAdjacentHTML('afterbegin','<option value="">—</option>');
 $('#tplStart').value = timeToSlot('09:00'); $('#tplEnd').value = timeToSlot('18:00');
 $('#tplBs').value=''; $('#tplBe').value='';
+drawIcons();
 applyStaticI18n();
 /* 初始畫面等 Firebase 決定登入狀態後再繪製（見 firebase-init.js） */

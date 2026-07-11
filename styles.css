@@ -140,8 +140,13 @@ body:not(.authed) .legend{ display:none; }
 }
 
 /* buttons */
-.btn{ cursor:pointer; border:none; background:var(--fill); color:var(--ink);
-  padding:8px 15px; border-radius:var(--radius); font-size:14px; font-weight:500; transition:background .12s, transform .08s; }
+.btn{ cursor:pointer; border:none; background:var(--fill); color:var(--ink); display:inline-flex; align-items:center; gap:6px;
+  padding:8px 14px; border-radius:var(--radius); font-size:14px; font-weight:500; transition:background .12s, transform .08s; }
+.btn svg{ width:17px; height:17px; flex:none; }
+.btn.icon svg{ width:21px; height:21px; }
+.menu-list button{ display:flex; align-items:center; gap:11px; }
+.menu-list button svg{ width:17px; height:17px; flex:none; color:var(--muted); }
+.menu-btn svg{ opacity:.85; }
 .btn:hover{ background:var(--fill-hover); }
 .btn:active{ transform:scale(.97); }
 .btn.sm{ padding:6px 12px; font-size:13px; }
