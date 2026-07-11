@@ -104,7 +104,9 @@ function setDay(date, personId, val){
 function isFullOff(day){ return day.off.some(o => o[0] <= 0 && o[1] >= SLOTS); }
 
 /* 雲端資料進來時重建 state 並重繪 */
+let _dataReady = false;
 function applyCloudSnapshot(d){
+  _dataReady = true;
   const people = {}; UNIT_IDS.forEach(id => people[id] = []);
   (d.people||[]).forEach(p => { if(!people[p.unitId]) people[p.unitId] = []; people[p.unitId].push({ id:p.id, unitId:p.unitId, empNo:p.empNo, name:p.name, foreignStudent:!!p.foreignStudent }); });
   state.people = people;
@@ -360,7 +362,14 @@ function buildCoverageRow(unitId, date){
   return row;
 }
 
+function renderGridSkeleton(){
+  const grid = $('#grid'); if(!grid) return;
+  let rows = '';
+  for(let i=0;i<5;i++) rows += `<div class="sk-row"><div class="sk-cell sk-name"></div><div class="sk-cell sk-bar" style="width:${34+i*11}%;margin-left:${6+i*8}%"></div></div>`;
+  grid.innerHTML = `<div class="skeleton">${rows}</div>`;
+}
 function renderGrid(){
+  if(document.body.classList.contains('authed') && !_dataReady){ renderGridSkeleton(); return; }
   clearSplitCache();
   $('#weekday').textContent = weekdayCh(curDate);
   $('#datePick').value = curDate;
@@ -437,6 +446,10 @@ function buildTrack(date, personId){
   day.off.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'off', idx, seg, null, null)));
   day.work.forEach((seg, idx) => track.appendChild(segEl(date, personId, 'work', idx, seg, split, info)));
   track.addEventListener('pointerdown', (ev)=> startPaint(ev, date, personId, track));
+  track.addEventListener('click', (ev)=>{   // 手機：點空白處建立班別（click 只在點擊觸發，捲動時不會）
+    if(!mobileMode() || ev.target.closest('.seg')) return;
+    openNewSegModal(date, personId, slotFromEvent(track, ev));
+  });
   return track;
 }
 
@@ -465,6 +478,7 @@ function segEl(date, personId, type, idx, seg, split, info){
   el.querySelector('.hd.l').addEventListener('pointerdown', e=> startResize(e, date, personId, type, idx, 'l'));
   el.querySelector('.hd.r').addEventListener('pointerdown', e=> startResize(e, date, personId, type, idx, 'r'));
   el.addEventListener('pointerdown', e=>{ hideTip(); startMove(e, date, personId, type, idx, el); });
+  el.addEventListener('click', e=>{ if(mobileMode() && !e.target.classList.contains('hd')){ e.stopPropagation(); openSegModal(date, personId, type, idx); } });
   el._tip = buildTipHTML(type, seg, split, info, full);
   el.addEventListener('pointerenter', onSegEnter);
   el.addEventListener('pointerleave', hideTip);
@@ -520,8 +534,10 @@ function slotFromEvent(track, ev){
   const r = track.getBoundingClientRect();
   return clamp(Math.floor((ev.clientX - r.left)/slotPx()), 0, SLOTS-1);
 }
+function mobileMode(){ return window.matchMedia('(max-width:760px)').matches; }
 function startPaint(ev, date, personId, track){
   if(ev.target.classList.contains('seg') || ev.target.classList.contains('hd')) return;
+  if(mobileMode()) return;   // 手機不用拖曳畫班（避免與捲動衝突），改由點擊→彈窗建立
   ev.preventDefault();
   const s = slotFromEvent(track, ev);
   const temp = document.createElement('div'); temp.className='seg temp'+(brushType==='off'?' off':'');
@@ -539,6 +555,7 @@ function paintUpdate(){
 }
 function startMove(ev, date, personId, type, idx, el){
   if(ev.target.classList.contains('hd')) return;
+  if(mobileMode()) return;   // 手機：不用拖曳搬移，改點擊→彈窗編輯（見 segEl 的 click）
   ev.preventDefault(); ev.stopPropagation();
   const seg = getDay(date, personId)[type][idx];
   drag = { mode:'move', type, date, personId, idx, el, track:el.parentElement,
@@ -547,6 +564,7 @@ function startMove(ev, date, personId, type, idx, el){
   bindDrag();
 }
 function startResize(ev, date, personId, type, idx, side){
+  if(mobileMode()) return;
   ev.preventDefault(); ev.stopPropagation();
   const track = ev.target.closest('.track');
   const el = ev.target.closest('.seg');
@@ -742,8 +760,11 @@ function weekendLeave(){
 }
 function clearMonth(){
   if(!confirm(t('clear_month_confirm'))) return;
-  monthDates().forEach(date => setDay(date, monthCtx.personId, { work:[], off:[] }));
+  const pid = monthCtx.personId;
+  const backup = monthDates().map(date=>({ date, day: cloneDay(getDay(date, pid)) }));
+  monthDates().forEach(date => setDay(date, pid, { work:[], off:[] }));
   renderMonth();
+  showToast(t('cleared_month'), ()=>{ backup.forEach(b=> setDay(b.date, pid, b.day)); renderMonth(); });
 }
 
 /* ---------- 筆刷切換 ---------- */
@@ -805,18 +826,41 @@ function fillTimeSelect(sel){
 }
 function openSegModal(date, personId, type, idx){
   const seg = getDay(date, personId)[type][idx];
-  segCtx = { date, personId, type, idx };
+  segCtx = { date, personId, type, idx, create:false };
+  $('#segTitle').textContent = t('seg_title');
+  $('#segTpls').hidden = true;
+  $('#segDelete').hidden = false;
   $('#segType').value = type; $('#segStart').value = seg[0]; $('#segEnd').value = seg[1]; $('#segErr').hidden=true;
   showModal('#segModal');
+}
+/* 手機：點空格 → 以彈窗建立班別（可設起訖或套範本） */
+function openNewSegModal(date, personId, slot){
+  segCtx = { date, personId, create:true };
+  $('#segTitle').textContent = t('new_seg_title');
+  $('#segDelete').hidden = true;
+  $('#segType').value = brushType;
+  const s = clamp(slot, 0, SLOTS-1), e = Math.min(s+2, SLOTS);
+  $('#segStart').value = s; $('#segEnd').value = e; $('#segErr').hidden = true;
+  renderSegTpls();
+  showModal('#segModal');
+}
+function renderSegTpls(){
+  const box = $('#segTpls'); const tpls = unitTemplates(curUnit);
+  if(!tpls.length){ box.hidden = true; box.innerHTML=''; return; }
+  box.hidden = false;
+  box.innerHTML = `<div class="seg-tpls-l">${t('apply_tpl')}</div><div class="seg-tpls-row">`
+    + tpls.map(tp=>`<button type="button" class="tpl-chip" data-s="${timeToSlot(tp.start)}" data-e="${timeToSlot(tp.end)}">${esc(tplLabel(tp.name))} ${tp.start}–${tp.end}</button>`).join('')
+    + `</div>`;
+  box.querySelectorAll('.tpl-chip').forEach(b=> b.onclick=()=>{ $('#segType').value='work'; $('#segStart').value=b.dataset.s; $('#segEnd').value=b.dataset.e; $('#segErr').hidden=true; });
 }
 $('#segSave').onclick = ()=>{
   const s = +$('#segStart').value, e = +$('#segEnd').value, newType = $('#segType').value;
   if(e<=s){ showErr('#segErr', t('seg_err')); return; }
   const day = cloneDay(getDay(segCtx.date, segCtx.personId));
-  day[segCtx.type].splice(segCtx.idx, 1);                 // 從原清單移除
-  day[newType] = normalize([...day[newType], [s,e]]);     // 加入新類型
+  if(!segCtx.create) day[segCtx.type].splice(segCtx.idx, 1);   // 編輯：先從原清單移除
+  day[newType] = normalize([...day[newType], [s,e]]);          // 加入新類型
   const other = newType==='work' ? 'off' : 'work';
-  day[other] = subtractRange(day[other], [s,e]);          // 另一類型挖掉重疊
+  day[other] = subtractRange(day[other], [s,e]);               // 另一類型挖掉重疊
   setDay(segCtx.date, segCtx.personId, day);
   closeModal('#segModal'); refreshView();
 };
@@ -866,11 +910,30 @@ $('#copyGo').onclick = ()=>{
   closeModal('#copyModal'); renderAll();
 };
 
-/* ---------- 清空當日 ---------- */
+/* ---------- 提示條 + 復原 ---------- */
+let _toastTimer = null;
+function showToast(msg, undoFn){
+  const el = $('#toast'); if(!el) return;
+  el.innerHTML = `<span class="toast-msg">${esc(msg)}</span>` + (undoFn ? `<button class="toast-undo">${t('undo')}</button>` : '');
+  el.hidden = false; requestAnimationFrame(()=> el.classList.add('show'));
+  if(undoFn) el.querySelector('.toast-undo').onclick = ()=>{ undoFn(); hideToast(); };
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(hideToast, 6000);
+}
+function hideToast(){
+  const el = $('#toast'); if(!el) return;
+  el.classList.remove('show'); clearTimeout(_toastTimer); _toastTimer = null;
+  setTimeout(()=>{ if(!el.classList.contains('show')) el.hidden = true; }, 260);
+}
+
+/* ---------- 清空當日（可復原） ---------- */
 $('#clearDay').onclick = ()=>{
   if(!confirm(t('clear_confirm', { unit:unitName(curUnit), date:curDate }))) return;
-  (state.people[curUnit]||[]).forEach(p=> setDay(curDate, p.id, { work:[], off:[] }));
+  const people = state.people[curUnit] || [];
+  const backup = people.map(p=>({ id:p.id, day: cloneDay(getDay(curDate, p.id)) }));
+  people.forEach(p=> setDay(curDate, p.id, { work:[], off:[] }));
   renderGrid();
+  showToast(t('cleared_day'), ()=>{ backup.forEach(b=> setDay(curDate, b.id, b.day)); renderGrid(); });
 };
 
 /* ---------- 匯出 ---------- */
@@ -1012,7 +1075,7 @@ $('#tbToggle').onclick = ()=>{
 
 $('#manageTpl').onclick = ()=>{ renderTplModal(); showModal('#tplModal'); };
 $('#copyDay').onclick = ()=>{ $('#copySrc').value=''; $('#copyErr').hidden=true; showModal('#copyModal'); };
-$('#exportBtn').onclick = ()=>{ $('#expFrom').value=curDate; $('#expTo').value=curDate; $('#expErr').hidden=true; resetExpStep(); showModal('#exportModal'); };
+$('#exportBtn').onclick = ()=>{ const r=monthRange(curDate); $('#expFrom').value=r[0]; $('#expTo').value=r[1]; $('#expErr').hidden=true; resetExpStep(); showModal('#exportModal'); };
 
 /* 匯出前預覽：列出即將寫入阿波羅的每一筆 */
 function renderExpPreview(){

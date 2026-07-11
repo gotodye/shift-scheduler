@@ -2,7 +2,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot }
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+         collection, doc, setDoc, deleteDoc, getDoc, onSnapshot }
   from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -18,7 +19,16 @@ const OWNER = "gotodye@gmail.com";           // 首位管理員（可建立其�
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// 離線快取：沒網路也能顯示上次資料、離線期間的寫入會排入佇列，連線後自動同步（多分頁共用）
+let db;
+try{
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+}catch(e){
+  console.warn('persistent cache unavailable, fallback', e);
+  db = initializeFirestore(app, {});
+}
 const provider = new GoogleAuthProvider();
 
 const toDocs = a => (a || []).map(x => ({ s:x[0], e:x[1] }));

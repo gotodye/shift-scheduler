@@ -159,6 +159,35 @@ body:not(.authed) .legend{ display:none; }
 .pv-off{ color:#c98a2b; font-weight:600; }
 .pv-brk{ color:var(--muted); font-size:11px; }
 .exp-empty{ font-size:13px; color:var(--muted); padding:16px; text-align:center; }
+
+/* 新增班別彈窗的範本快捷 */
+.seg-tpls{ margin-bottom:4px; }
+.seg-tpls-l{ font-size:12px; color:var(--muted); margin-bottom:7px; }
+.seg-tpls-row{ display:flex; flex-wrap:wrap; gap:6px; }
+.seg-tpls .tpl-chip{ font-size:12.5px; }
+
+/* 提示條 + 復原 */
+.toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(12px); z-index:150;
+  display:flex; align-items:center; gap:14px; padding:12px 16px; border-radius:14px; max-width:calc(100vw - 32px);
+  background:var(--glass-menu); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border:.5px solid var(--glass-brd); box-shadow:var(--sh-pop); color:var(--ink); font-size:14px;
+  opacity:0; transition:opacity .22s ease, transform .22s cubic-bezier(.2,.7,.2,1); pointer-events:none; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.toast[hidden]{ display:none; }
+.toast-msg{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.toast-undo{ flex:none; border:none; background:var(--accent-bg); color:var(--accent); font-weight:700; font-size:13px;
+  padding:6px 14px; border-radius:20px; cursor:pointer; }
+.toast-undo:active{ transform:scale(.96); }
+
+/* 載入骨架 */
+@keyframes shimmer{ 0%{ background-position:-500px 0; } 100%{ background-position:500px 0; } }
+.skeleton{ padding:14px 16px; }
+.sk-row{ display:flex; align-items:center; gap:14px; height:var(--row-h); }
+.sk-cell{ height:24px; border-radius:9px;
+  background:linear-gradient(90deg, var(--fill) 25%, var(--line-strong) 50%, var(--fill) 75%);
+  background-size:600px 100%; animation:shimmer 1.5s infinite linear; }
+.sk-name{ width:var(--name-w); flex:none; }
+.sk-bar{ height:28px; }
 .top-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
 /* 左側毛玻璃導覽軌 */
@@ -566,6 +595,10 @@ body:not(.authed) .legend{ display:none; }
   .grid-wrap{ padding:0 0 12px; }
   .grid{ border-radius:0; border-left:none; border-right:none; margin-top:8px; }
   .legend{ display:none; }   /* 說明文字（滑鼠操作導向）手機隱藏 */
+  /* 提示條移到底部導覽列上方、滿版 */
+  .toast{ left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom)); max-width:none;
+    transform:translateY(12px); justify-content:space-between; }
+  .toast.show{ transform:translateY(0); }
   .mini{ width:30px; height:30px; }
   .modal-mask{ align-items:flex-end; }
   .modal{ width:100%; max-width:none; border-radius:20px 20px 0 0; max-height:92vh; overflow:auto; padding:18px 18px 26px; }
