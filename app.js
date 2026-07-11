@@ -364,6 +364,7 @@ function renderGrid(){
   clearSplitCache();
   $('#weekday').textContent = weekdayCh(curDate);
   $('#datePick').value = curDate;
+  { const dl=$('#dateLabel'); if(dl) dl.textContent = curDate.replace(/-/g,'/'); }
   const vis = visibleUnits();
   if(vis.length && !vis.some(u=>u.id===curUnit)) curUnit = vis[0].id;
   const grid = $('#grid'); grid.innerHTML = '';
@@ -919,6 +920,34 @@ $('#nextDay').onclick = ()=> shiftDate(1);
 $('#todayBtn').onclick = ()=>{ curDate=todayKey(); save(); renderGrid(); };
 $('#datePick').onchange = (e)=>{ curDate=e.target.value; save(); renderGrid(); };
 function shiftDate(n){ const d=new Date(curDate+'T00:00:00'); d.setDate(d.getDate()+n); curDate=dateKey(d); save(); renderGrid(); }
+
+/* 自製日曆下拉 */
+let calYM = null;
+function renderCal(){
+  const y=calYM.y, m=calYM.m;
+  const startOff = (new Date(y,m,1).getDay()+6)%7;   // 週一為首
+  const days = new Date(y, m+1, 0).getDate();
+  let cells = [1,2,3,4,5,6,0].map(d=>`<div class="cal-wd">${dowLabel(d)}</div>`).join('');
+  for(let i=0;i<startOff;i++) cells += '<div class="cal-cell blank"></div>';
+  for(let dd=1; dd<=days; dd++){
+    const key = `${y}-${pad(m+1)}-${pad(dd)}`;
+    const cls = (key===curDate?'sel':'') + (key===todayKey()?' today':'');
+    cells += `<button class="cal-cell ${cls}" data-date="${key}">${dd}</button>`;
+  }
+  $('#calPop').innerHTML =
+    `<div class="cal-head"><button class="cal-nav" data-cal="prev"><i data-lucide="chevron-left"></i></button>`
+    + `<span class="cal-title">${monthLabel(y,m)}</span>`
+    + `<button class="cal-nav" data-cal="next"><i data-lucide="chevron-right"></i></button></div>`
+    + `<div class="cal-grid">${cells}</div>`;
+  drawIcons();
+  $$('#calPop .cal-cell[data-date]').forEach(b=> b.onclick=()=>{ curDate=b.dataset.date; save(); closeCal(); renderGrid(); });
+  $$('#calPop .cal-nav').forEach(b=> b.onclick=(e)=>{ e.stopPropagation(); let mm=calYM.m+(b.dataset.cal==='prev'?-1:1), yy=calYM.y; if(mm<0){mm=11;yy--;} if(mm>11){mm=0;yy++;} calYM={y:yy,m:mm}; renderCal(); });
+}
+function openCal(){ const d=new Date(curDate+'T00:00:00'); calYM={ y:d.getFullYear(), m:d.getMonth() }; $('#calPop').hidden=false; renderCal(); }
+function closeCal(){ $('#calPop').hidden=true; }
+$('#dateBtn').onclick = (e)=>{ e.stopPropagation(); if($('#calPop').hidden) openCal(); else closeCal(); };
+$('#calPop').addEventListener('click', e=> e.stopPropagation());
+document.addEventListener('click', ()=> closeCal());
 
 $('#addPerson').onclick = ()=> openPersonModal();
 $('#applyAll').onclick = applyTemplateAll;
