@@ -7,14 +7,16 @@ service cloud.firestore {
     function userDoc() { return /databases/$(database)/documents/users/$(em()); }
     function isUser()  { return request.auth != null && (owner() || exists(userDoc())); }
     function isAdmin() { return request.auth != null && (owner() || (exists(userDoc()) && get(userDoc()).data.admin == true)); }
+    function isViewer(){ return request.auth != null && exists(userDoc()) && get(userDoc()).data.viewer == true; }  // 唯讀看板帳號
+    function canEdit() { return isUser() && !isViewer(); }
 
     match /users/{email} {
       allow read:  if request.auth != null && (isUser() || request.auth.token.email.lower() == email);
       allow write: if isAdmin();
     }
-    match /people/{id}    { allow read, write: if isUser(); }
-    match /templates/{id} { allow read, write: if isUser(); }
-    match /shifts/{id}    { allow read, write: if isUser(); }
+    match /people/{id}    { allow read: if isUser(); allow write: if canEdit(); }
+    match /templates/{id} { allow read: if isUser(); allow write: if canEdit(); }
+    match /shifts/{id}    { allow read: if isUser(); allow write: if canEdit(); }
     match /logs/{id} {                                    // 編輯紀錄：任何使用者可新增(限本人)，僅管理者可讀/清理，不可竄改
       allow create: if isUser() && request.resource.data.by == em();
       allow read, delete: if isAdmin();

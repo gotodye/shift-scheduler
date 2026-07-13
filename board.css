@@ -1,0 +1,66 @@
+/* 部門排班看板專屬樣式（重用 styles.css 的設計 token 與 .cmp-table/.roster-table） */
+body.board{ min-height:100vh; }
+
+/* 載入中轉圈 */
+.spin{ width:34px; height:34px; border-radius:50%; border:3px solid var(--line-strong); border-top-color:var(--accent);
+  animation:bspin .8s linear infinite; }
+@keyframes bspin{ to{ transform:rotate(360deg); } }
+
+/* 登入卡 */
+.board-login{ display:flex; flex-direction:column; gap:12px; width:min(360px, 90vw); text-align:center; }
+.board-login h1{ font-size:22px; font-weight:700; margin:2px 0 0; letter-spacing:-.02em; }
+.board-login .muted{ font-size:13px; margin:0 0 4px; }
+.board-logo{ width:56px; height:56px; margin:0 auto; border-radius:18px; color:#fff;
+  background:linear-gradient(135deg,#8f9bf6,#7a8af1); box-shadow:0 10px 22px rgba(122,138,241,.45);
+  display:flex; align-items:center; justify-content:center; }
+.board-logo svg{ width:28px; height:28px; }
+.board-login input{ padding:12px 14px; border:1px solid var(--line-strong); border-radius:13px; background:var(--elev);
+  color:var(--ink); font-size:15px; }
+.board-login .btn.primary{ justify-content:center; padding:12px; font-size:15px; }
+.board-login .lang-sel{ margin:2px auto 0; }
+
+/* 看板頂列 */
+.board-head{ position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  padding:12px 20px; background:var(--glass); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:.5px solid var(--glass-brd); }
+.board-title{ display:flex; align-items:center; gap:9px; font-size:19px; font-weight:700; letter-spacing:-.02em; }
+.board-title svg{ width:20px; height:20px; color:var(--accent); }
+.board-nav{ display:flex; align-items:center; gap:8px; }
+.board-range{ font-size:15px; font-weight:600; margin-left:4px; min-width:120px; }
+.board-modes{ margin-left:auto; }
+.board-modes .bmode{ border:none; background:transparent; color:var(--ink); font-size:13px; font-weight:500;
+  padding:6px 14px; border-radius:9px; cursor:pointer; }
+.board-modes .bmode.active{ background:var(--elev); color:var(--accent); box-shadow:0 1px 2px rgba(0,0,0,.18); font-weight:600; }
+.board-right{ display:flex; align-items:center; gap:10px; }
+
+/* 內容區 */
+.board-body{ padding:20px; max-width:1200px; margin:0 auto; }
+.board-sec-h{ font-size:16px; font-weight:600; margin:18px 0 10px; }
+.board-sec-h:first-child{ margin-top:0; }
+
+/* 日檢視：人員 + 班別 */
+.board-day{ display:flex; flex-direction:column; gap:8px; }
+.bd-row{ display:flex; align-items:center; justify-content:space-between; gap:14px;
+  background:var(--panel); border-radius:15px; padding:13px 18px; box-shadow:var(--sh1); }
+.bd-name{ font-size:16px; font-weight:600; }
+.bd-shift{ font-size:15px; font-weight:600; padding:5px 14px; border-radius:20px; white-space:nowrap; }
+.bd-row.work .bd-shift{ background:var(--accent-bg); color:var(--accent); }
+.bd-row.off .bd-shift{ background:var(--warn-bg); color:var(--warn-tx); }
+.bd-row.none .bd-shift{ background:var(--fill); color:var(--muted); font-weight:500; }
+
+/* 週／月檢視表格 */
+.board-table-wrap{ overflow-x:auto; border-radius:18px; box-shadow:var(--sh1); background:var(--panel); }
+.board-table-wrap .roster-table{ font-size:13px; }
+.board-table-wrap .roster-table td, .board-table-wrap .roster-table th{ padding:7px 9px; }
+.board-table-wrap .rd{ color:var(--muted); font-size:11px; }
+
+.empty{ text-align:center; color:var(--muted); padding:28px; font-size:14px; }
+
+@media (max-width:760px){
+  .board-head{ padding:calc(10px + env(safe-area-inset-top)) 12px 10px; gap:10px; }
+  .board-title{ font-size:17px; width:100%; }
+  .board-modes{ margin-left:0; }
+  .board-right{ margin-left:auto; }
+  .board-body{ padding:12px; }
+  .board-range{ min-width:0; font-size:14px; }
+}

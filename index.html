@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=35">
+<link rel="stylesheet" href="styles.css?v=36">
 <script>try{var _t=localStorage.getItem('ss.theme');if(_t==='light'||_t==='dark')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -420,6 +420,7 @@
     <div style="border-top:1px solid var(--line); padding-top:12px;">
       <label><span data-i18n="um_email">新增 / 更新使用者 Email</span> <input id="umEmail" placeholder="someone@gmail.com"></label>
       <label class="chk"><input type="checkbox" id="umAdmin"> <span data-i18n="um_admin">設為管理員（可管理所有單位與使用者）</span></label>
+      <label class="chk"><input type="checkbox" id="umViewer"> <span data-i18n="um_viewer">唯讀看板帳號（只能看、不能改；供部門看板共用登入）</span></label>
       <div class="muted small" style="margin:8px 0 4px;" data-i18n="um_units_hint">或勾選可編輯的單位：</div>
       <div id="umUnits" class="um-units"></div>
       <button class="btn ghost sm" id="umAdd" style="margin-top:10px;" data-i18n="um_add">新增 / 更新</button>
@@ -436,9 +437,9 @@
 </div>
 
 <div id="toast" class="toast" hidden></div>
-<script src="i18n.js?v=35"></script>
-<script src="help.js?v=35"></script>
-<script src="app.js?v=35"></script>
-<script type="module" src="firebase-init.js?v=35"></script>
+<script src="i18n.js?v=36"></script>
+<script src="help.js?v=36"></script>
+<script src="app.js?v=36"></script>
+<script type="module" src="firebase-init.js?v=36"></script>
 </body>
 </html>

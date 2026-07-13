@@ -1323,8 +1323,9 @@ function renderUserMgmt(){
   const list = $('#umList'); list.innerHTML = '';
   usersList.slice().sort((a,b)=> (a.email||'').localeCompare(b.email||'')).forEach(u => {
     const units = u.admin ? t('um_all') : ((u.units||[]).map(id=>unitName(id)).join(getLang()==='zh'?'、':', ') || t('um_none'));
+    const tag = u.admin ? t('um_admin_label') : (esc(units) + (u.viewer ? ' · '+t('um_viewer_tag') : ''));
     const it = document.createElement('div'); it.className='tpl-item';
-    it.innerHTML = `<span class="nm">${esc(u.email)}</span><span class="tm">${u.admin?t('um_admin_label'):esc(units)}</span>`;
+    it.innerHTML = `<span class="nm">${esc(u.email)}</span><span class="tm">${tag}</span>`;
     const rm = document.createElement('button'); rm.className='rm'; rm.textContent=t('um_remove');
     rm.onclick = ()=>{ if(u.email===myEmail){ alert(t('um_no_self')); return; } if(confirm(t('um_confirm_remove',{email:u.email}))){ if(window.SB) window.SB.deleteUser(u.email); } };
     it.appendChild(rm); list.appendChild(it);
@@ -1334,10 +1335,11 @@ $('#umAdd').onclick = ()=>{
   const email = $('#umEmail').value.trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ alert(t('um_err_email')); return; }
   const admin = $('#umAdmin').checked;
+  const viewer = $('#umViewer').checked;
   const units = $$('#umUnits input:checked').map(i=>i.value);
   if(!admin && !units.length){ alert(t('um_err_units')); return; }
-  if(window.SB) window.SB.writeUser(email, { admin, units, name:'' });
-  $('#umEmail').value=''; $('#umAdmin').checked=false; $$('#umUnits input').forEach(i=>i.checked=false);
+  if(window.SB) window.SB.writeUser(email, { admin, viewer, units, name:'' });
+  $('#umEmail').value=''; $('#umAdmin').checked=false; $('#umViewer').checked=false; $$('#umUnits input').forEach(i=>i.checked=false);
 };
 
 /* ---------- 測試資料（管理員） ---------- */
