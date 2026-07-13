@@ -981,6 +981,7 @@ function buildRows(from, to, unitIds){
         const off = slotToTime(work[work.length-1][1]);
         const breaks = [];
         for(let i=0;i<work.length-1;i++) breaks.push(slotToTime(work[i][1])+'~'+slotToTime(work[i+1][0]));
+        if(!breaks.length) breaks.push(on + '~' + on);   // 無休息時間 → 以「上班時間~上班時間」佔位
         if(breaks.length>3) warns.push(t('exp_warn_break', { name:p.name, date:apolloDate(key) }));
         rows.push([p.empNo, p.name, apolloDate(key), STATUS_WORK, SHIFT_CODE, on, off, breaks.slice(0,3).join(','), '', '', '', '', '', '', '', '', '', '']);
       });
@@ -1111,8 +1112,9 @@ function renderExpPreview(){
   if(!rows.length){ box.innerHTML = heading + `<div class="exp-empty">${t('exp_preview_empty')}</div>`; box.hidden=false; drawIcons(); return false; }
   const bodyRows = rows.map(r=>{
     const leave = r[3]===STATUS_LEAVE;
+    const brks = (r[7]||'').split(',').filter(b=>{ const x=b.split('~'); return x[0] !== x[1]; });   // 略過零長度佔位休息
     const time = leave ? `<span class="pv-off">${t('off')}</span>`
-      : `${r[5]}–${r[6]}` + (r[7]?` <span class="pv-brk">(${t('tpl_break')} ${esc(r[7])})</span>`:'');
+      : `${r[5]}–${r[6]}` + (brks.length?` <span class="pv-brk">(${t('tpl_break')} ${esc(brks.join(','))})</span>`:'');
     return `<tr><td>${esc(r[1])}</td><td>${r[2]}</td><td>${time}</td></tr>`;
   }).join('');
   box.innerHTML = heading

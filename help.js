@@ -29,6 +29,10 @@ window.HELP = {
       '比對：上傳阿波羅打卡紀錄，和排班逐筆對照。',
       '月班表：整月表格，可列印或匯出 Excel。',
       '獎金報表、編輯紀錄：管理員限定。' ] },
+    { icon:'monitor', t:'部門看板（給不需登入的人看）', items:[
+      '另有獨立唯讀看板 board.html，供不需登入主系統的人查看排班。',
+      '各部門用共用帳密登入，只能看、不能改；可日／週／月切換、四語。',
+      '適合掛在部門螢幕；設定方式見說明書。' ] },
     { icon:'sparkles', t:'App 與小提醒', items:[
       '手機 Safari →「分享」→「加入主畫面」，即可全螢幕當 App 用。',
       '離線也能看上次資料，恢復連線會自動同步。',
@@ -62,6 +66,10 @@ window.HELP = {
       'Compare: upload Apollo punch records and match against the schedule.',
       'Monthly roster: full-month table, printable or Excel export.',
       'Bonus report & edit log: admin only.' ] },
+    { icon:'monitor', t:'Department board (for people who don’t log in)', items:[
+      'A separate read-only board (board.html) lets people view schedules without the main system.',
+      'Each department signs in with a shared account — view only, no editing; day/week/month, 4 languages.',
+      'Great for a department screen; setup is in the manual.' ] },
     { icon:'sparkles', t:'App & tips', items:[
       'iPhone Safari → Share → Add to Home Screen for a full-screen app.',
       'Works offline with the last loaded data; syncs automatically when back online.',
@@ -95,6 +103,10 @@ window.HELP = {
       'Đối chiếu: tải bản ghi chấm công Apollo và so với lịch.',
       'Bảng tháng: bảng cả tháng, in hoặc xuất Excel.',
       'Báo cáo thưởng & nhật ký: chỉ quản trị.' ] },
+    { icon:'monitor', t:'Bảng bộ phận (cho người không đăng nhập)', items:[
+      'Có bảng chỉ đọc riêng (board.html) để xem lịch mà không cần vào hệ thống chính.',
+      'Mỗi bộ phận đăng nhập bằng tài khoản chung — chỉ xem, không sửa; ngày/tuần/tháng, 4 ngôn ngữ.',
+      'Phù hợp cho màn hình bộ phận; cách thiết lập xem trong hướng dẫn.' ] },
     { icon:'sparkles', t:'Ứng dụng & mẹo', items:[
       'iPhone Safari → Chia sẻ → Thêm vào Màn hình chính để dùng toàn màn hình.',
       'Hoạt động ngoại tuyến với dữ liệu tải lần trước; tự đồng bộ khi có mạng.',
@@ -128,6 +140,10 @@ window.HELP = {
       'เทียบ: อัปโหลดบันทึกลงเวลา Apollo แล้วเทียบกับตาราง.',
       'ตารางเดือน: ตารางทั้งเดือน พิมพ์หรือส่งออก Excel.',
       'รายงานโบนัส & บันทึกแก้ไข: เฉพาะผู้ดูแล.' ] },
+    { icon:'monitor', t:'บอร์ดแผนก (สำหรับคนที่ไม่ต้องล็อกอิน)', items:[
+      'มีบอร์ดอ่านอย่างเดียวแยกต่างหาก (board.html) ให้ดูตารางโดยไม่ต้องเข้าระบบหลัก.',
+      'แต่ละแผนกล็อกอินด้วยบัญชีร่วม — ดูอย่างเดียว แก้ไม่ได้; วัน/สัปดาห์/เดือน, 4 ภาษา.',
+      'เหมาะกับจอแผนก; วิธีตั้งค่าดูในคู่มือ.' ] },
     { icon:'sparkles', t:'แอป & เคล็ดลับ', items:[
       'iPhone Safari → แชร์ → เพิ่มไปยังหน้าจอโฮม เพื่อใช้แบบเต็มจอ.',
       'ใช้งานออฟไลน์ด้วยข้อมูลที่โหลดล่าสุด; ซิงก์อัตโนมัติเมื่อกลับมาออนไลน์.',
