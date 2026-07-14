@@ -1664,10 +1664,17 @@ function importSchedule(wb){
   const ds=rows.map(r=>r.date).sort();
   if(!confirm(t('import_sched_confirm',{ unit:unitName(curUnit), people:empSet.size, rows:rows.length, from:ds[0], to:ds[ds.length-1] }))) return;
   const uid=curUnit; if(!state.people[uid]) state.people[uid]=[];
-  let created=0, wrote=0, skipped=0;
+  // 第一階段：先確保所有人員存在，記下 工號→id（避免匯入中途雲端快照重建 state.people 造成對照錯亂）
+  const idByEmp={}; let created=0;
+  [...empSet].forEach(emp=>{
+    let p=state.people[uid].find(x=>x.empNo===emp);
+    if(!p){ const nm=(rows.find(r=>r.emp===emp)||{}).name || emp; p={ id:pid(), unitId:uid, empNo:emp, name:nm, foreignStudent:false }; state.people[uid].push(p); if(window.SB) window.SB.writePerson(p); created++; }
+    idByEmp[emp]=p.id;
+  });
+  // 第二階段：以固定的 id 寫入各日班別
+  let wrote=0, skipped=0;
   rows.forEach(r=>{
-    let p=state.people[uid].find(x=>x.empNo===r.emp);
-    if(!p){ p={ id:pid(), unitId:uid, empNo:r.emp, name:r.name||r.emp, foreignStudent:false }; state.people[uid].push(p); if(window.SB) window.SB.writePerson(p); created++; }
+    const personId=idByEmp[r.emp];
     let day;
     if(r.status && r.status!=='W0001'){ day={ work:[], off:[[0,SLOTS]] }; }        // 休假類 → 整日休假
     else {
@@ -1676,7 +1683,7 @@ function importSchedule(wb){
       let work=[[s,e]]; schedBreaks(r.brk).forEach(b=>{ work=subtractRange(work,b); });
       day={ work:normalize(work), off:[] };
     }
-    setDay(r.date, p.id, day); wrote++;
+    setDay(r.date, personId, day); wrote++;
   });
   renderAll(); closeModal('#userModal');
   logAction('import_sched', { date: ds[0] });
