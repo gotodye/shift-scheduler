@@ -1617,6 +1617,72 @@ function importPeople(wb){
   renderAll(); closeModal('#userModal'); alert(t('import_done')+added);
 }
 
+/* ---------- 匯入班表（阿波羅格式，反向於匯出） ---------- */
+$('#importSchedBtn').onclick=()=>{ if(!isAdmin) return; $('#importSchedFile').click(); };
+$('#importSchedFile').onchange=(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(typeof XLSX==='undefined'){ alert(t('xlsx_missing')); return; }
+  const rd=new FileReader();
+  rd.onload=ev=>{ try{ importSchedule(XLSX.read(new Uint8Array(ev.target.result),{type:'array'})); }catch(err){ alert(t('xlsx_read_fail')+err.message); } };
+  rd.readAsArrayBuffer(f); e.target.value='';
+};
+function schedSlot(v){                                   // 時間格 → 半小時格數
+  if(v==null||v==='') return null;
+  if(v instanceof Date) return v.getHours()*2 + (v.getMinutes()>=30?1:0);
+  const s=String(v).trim(); if(s==='24:00') return SLOTS;
+  const m=s.match(/(\d{1,2}):(\d{2})/); if(m) return (+m[1])*2 + (+m[2]>=30?1:0);
+  const n=Number(s); if(!isNaN(n) && n>0 && n<2){ const mins=Math.round(n*1440); return Math.floor(mins/60)*2 + (mins%60>=30?1:0); }
+  return null;
+}
+function schedDate(v){                                   // 日期格 → YYYY-MM-DD
+  if(v instanceof Date) return dateKey(v);
+  const s=String(v).trim();
+  let m=s.match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  m=s.match(/^(\d{1,2})\D(\d{1,2})\D(\d{2,4})$/); if(m){ let y=+m[3]; if(y<100)y+=2000; return `${y}-${pad(+m[1])}-${pad(+m[2])}`; }
+  const n=Number(s); if(!isNaN(n) && n>30000){ const d=new Date(Math.round((n-25569)*86400000)); if(!isNaN(d)) return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`; }
+  return null;
+}
+function schedBreaks(str){                               // "18:00~19:00,13:00~14:00" → [[bs,be]]（略過零長度佔位）
+  return String(str||'').split(',').map(b=>{
+    const m=b.match(/(\d{1,2}):(\d{2})\s*~\s*(\d{1,2}):(\d{2})/); if(!m) return null;
+    const bs=(+m[1])*2+(+m[2]>=30?1:0), be=(m[3]==='24'?SLOTS:(+m[3])*2+(+m[4]>=30?1:0));
+    return be>bs ? [bs,be] : null;
+  }).filter(Boolean);
+}
+function importSchedule(wb){
+  const ws=wb.Sheets[wb.SheetNames[0]]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});   // raw 值：日期=序號、時間=日分數，避免地區格式歧義
+  if(aoa.length<2){ alert(t('punch_empty')); return; }
+  // 阿波羅匯入格式固定欄位：0工號 1姓名 2日期 3狀態代碼 5上班 6下班 7休息
+  const rows=[];
+  for(let i=1;i<aoa.length;i++){
+    const r=aoa[i]||[]; const emp=String(r[0]).trim(); if(!emp) continue;
+    const dk=schedDate(r[2]); if(!dk) continue;
+    rows.push({ emp, name:String(r[1]).trim(), date:dk, status:String(r[3]).trim().toUpperCase(), on:r[5], off:r[6], brk:r[7] });
+  }
+  if(!rows.length){ alert(t('import_sched_bad')); return; }
+  const empSet=new Set(rows.map(r=>r.emp));
+  const ds=rows.map(r=>r.date).sort();
+  if(!confirm(t('import_sched_confirm',{ unit:unitName(curUnit), people:empSet.size, rows:rows.length, from:ds[0], to:ds[ds.length-1] }))) return;
+  const uid=curUnit; if(!state.people[uid]) state.people[uid]=[];
+  let created=0, wrote=0, skipped=0;
+  rows.forEach(r=>{
+    let p=state.people[uid].find(x=>x.empNo===r.emp);
+    if(!p){ p={ id:pid(), unitId:uid, empNo:r.emp, name:r.name||r.emp, foreignStudent:false }; state.people[uid].push(p); if(window.SB) window.SB.writePerson(p); created++; }
+    let day;
+    if(r.status && r.status!=='W0001'){ day={ work:[], off:[[0,SLOTS]] }; }        // 休假類 → 整日休假
+    else {
+      const s=schedSlot(r.on), e=schedSlot(r.off);
+      if(s==null || e==null || e<=s){ skipped++; return; }
+      let work=[[s,e]]; schedBreaks(r.brk).forEach(b=>{ work=subtractRange(work,b); });
+      day={ work:normalize(work), off:[] };
+    }
+    setDay(r.date, p.id, day); wrote++;
+  });
+  renderAll(); closeModal('#userModal');
+  logAction('import_sched', { date: ds[0] });
+  alert(t('import_sched_done',{ rows:wrote, people:created, skipped }));
+}
+
 /* ---------- 月班表（可列印） ---------- */
 let rosterOpen=false, rosterYM=null;
 function rosterData(){

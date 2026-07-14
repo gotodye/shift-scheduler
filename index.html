@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=37">
+<link rel="stylesheet" href="styles.css?v=38">
 <script>try{var _t=localStorage.getItem('ss.theme');if(_t==='light'||_t==='dark')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -427,7 +427,9 @@
     </div>
     <div style="border-top:1px solid var(--line); padding-top:12px; margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
       <input type="file" id="importFile" accept=".xlsx,.xls,.csv" hidden>
+      <input type="file" id="importSchedFile" accept=".xlsx,.xls" hidden>
       <button class="btn ghost sm" id="importBtn" data-i18n="import_btn">匯入人員</button>
+      <button class="btn ghost sm" id="importSchedBtn" data-i18n="import_sched_btn">匯入班表</button>
       <button class="btn ghost sm" id="seedTestBtn" data-i18n="test_seed">產生測試資料</button>
       <button class="btn ghost sm danger-text" id="clearTestBtn" data-i18n="test_clear">清除測試資料</button>
     </div>
@@ -437,9 +439,9 @@
 </div>
 
 <div id="toast" class="toast" hidden></div>
-<script src="i18n.js?v=37"></script>
-<script src="help.js?v=37"></script>
-<script src="app.js?v=37"></script>
-<script type="module" src="firebase-init.js?v=37"></script>
+<script src="i18n.js?v=38"></script>
+<script src="help.js?v=38"></script>
+<script src="app.js?v=38"></script>
+<script type="module" src="firebase-init.js?v=38"></script>
 </body>
 </html>
