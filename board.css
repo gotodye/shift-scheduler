@@ -48,6 +48,13 @@ body.board{ min-height:100vh; }
 .bd-row.off .bd-shift{ background:var(--warn-bg); color:var(--warn-tx); }
 .bd-row.none .bd-shift{ background:var(--fill); color:var(--muted); font-weight:500; }
 
+/* 日檢視：時間軸條狀（重用排班 .grid/.track/.seg） */
+.board-grid-wrap{ overflow-x:auto; padding-bottom:4px; }
+.board .seg{ cursor:default; }
+.board .seg .lbl{ font-size:13px; }
+.board .th-hour{ font-size:12px; }
+.board .name-cell .nm{ font-size:15px; }
+
 /* 週／月檢視表格 */
 .board-table-wrap{ overflow-x:auto; border-radius:18px; box-shadow:var(--sh1); background:var(--panel); }
 .board-table-wrap .roster-table{ font-size:13px; }

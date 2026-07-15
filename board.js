@@ -24,6 +24,8 @@ const $$ = s => [...document.querySelectorAll(s)];
 const pad = n => String(n).padStart(2, '0');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 function drawIcons(){ if(window.lucide){ try{ lucide.createIcons(); }catch(e){} } }
+const UNIT_COLOR = { ID:'#7a8af1', VN:'#67cdb4', TH:'#f6ad55', PH:'#a78bfa', KYC:'#f48fb1' };   // 同排班系統
+function slotPx(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slot')); }
 
 /* ---- 日期／時間工具 ---- */
 function dateKey(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
@@ -77,6 +79,26 @@ function dayList(ppl){
     return `<div class="bd-row ${cls}"><span class="bd-name">${esc(p.name)}</span><span class="bd-shift">${txt || '—'}</span></div>`;
   }).join('') + `</div>`;
 }
+/* 日檢視：時間軸條狀班段（唯讀，重用排班的 .grid/.track/.seg 樣式） */
+function dayTimeline(ppl, uid){
+  const w = slotPx();
+  const hours = Array.from({length:24}, (_,h)=> `<div class="th-hour">${pad(h)}</div>`).join('');
+  const color = UNIT_COLOR[uid] || '#7a8af1';
+  const rows = ppl.map(p=>{
+    const d = shifts[curDate] && shifts[curDate][p.id];
+    let segs = '';
+    if(d){
+      if(isFullOff(d)){
+        segs = `<div class="seg off" style="left:0;width:${SLOTS*w}px"><span class="lbl">${t('off')}</span></div>`;
+      } else {
+        (d.off||[]).forEach(o=>{ if(o.e>o.s) segs += `<div class="seg off" style="left:${o.s*w}px;width:${(o.e-o.s)*w}px"></div>`; });
+        (d.work||[]).forEach(o=>{ if(o.e>o.s) segs += `<div class="seg" style="left:${o.s*w}px;width:${(o.e-o.s)*w}px;background:${color}"><span class="lbl">${slotToTime(o.s)}–${slotToTime(o.e)}</span></div>`; });
+      }
+    }
+    return `<div class="row"><div class="name-cell"><span class="who"><span class="nm">${esc(p.name)}</span></span></div><div class="track">${segs}</div></div>`;
+  }).join('');
+  return `<div class="board-grid-wrap"><div class="grid"><div class="time-header"><div class="th-spacer"></div><div class="th-hours">${hours}</div></div>${rows}</div></div>`;
+}
 function rosterTable(ppl, dates){
   const heads = dates.map(d=>{ const w = dowOf(d); return `<th class="${(w===0||w===6)?'wke':''}">${d.slice(8)}<br><span class="rd">${dowLabel(w)}</span></th>`; }).join('');
   const rows = ppl.map(p => `<tr><td class="rn">${esc(p.name)}</td>` + dates.map(d=>{
@@ -89,7 +111,7 @@ function sectionForUnit(uid){
   const ppl = peopleOf(uid);
   const head = myUnits.length > 1 ? `<div class="board-sec-h">${esc(unitName(uid))}</div>` : '';
   if(!ppl.length) return head + `<div class="empty">${t('board_no_people')}</div>`;
-  if(mode === 'day') return head + dayList(ppl);
+  if(mode === 'day') return head + dayTimeline(ppl, uid);
   return head + rosterTable(ppl, mode === 'week' ? weekDates() : monthDays(curDate));
 }
 function renderBoard(){
