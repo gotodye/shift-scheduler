@@ -34,7 +34,7 @@ body.board{ min-height:100vh; }
 .board-right{ display:flex; align-items:center; gap:10px; }
 
 /* 內容區 */
-.board-body{ padding:20px; max-width:1200px; margin:0 auto; }
+.board-body{ padding:20px 24px; max-width:1680px; margin:0 auto; }
 .board-sec-h{ font-size:16px; font-weight:600; margin:18px 0 10px; }
 .board-sec-h:first-child{ margin-top:0; }
 
@@ -48,12 +48,20 @@ body.board{ min-height:100vh; }
 .bd-row.off .bd-shift{ background:var(--warn-bg); color:var(--warn-tx); }
 .bd-row.none .bd-shift{ background:var(--fill); color:var(--muted); font-weight:500; }
 
-/* 日檢視：時間軸條狀（重用排班 .grid/.track/.seg） */
-.board-grid-wrap{ overflow-x:auto; padding-bottom:4px; }
+/* 日檢視：時間軸條狀（流動寬度，自動撐滿畫面；重用排班 .grid/.track/.seg） */
+.board{ --row-h:60px; --name-w:200px; }
+.board-grid-wrap{ padding-bottom:4px; }
+.board .grid{ width:100%; min-width:0; margin-top:0; }
+.board .th-hours{ flex:1; }
+.board .th-hour{ flex:1; width:auto; font-size:13px; padding:10px 0; }
+.board .track{ background-image:
+  repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px calc(100%/24)),
+  repeating-linear-gradient(90deg, var(--hair) 0 1px, transparent 1px calc(100%/48)); }
 .board .seg{ cursor:default; }
-.board .seg .lbl{ font-size:13px; }
-.board .th-hour{ font-size:12px; }
-.board .name-cell .nm{ font-size:15px; }
+.board .seg .lbl{ font-size:14.5px; }
+.board .bd-who{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.board .bd-who .nm{ font-size:17px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.board .bd-time{ display:none; font-size:12px; color:var(--muted); }
 
 /* 週／月檢視表格 */
 .board-table-wrap{ overflow-x:auto; border-radius:18px; box-shadow:var(--sh1); background:var(--panel); }
@@ -70,4 +78,13 @@ body.board{ min-height:100vh; }
   .board-right{ margin-left:auto; }
   .board-body{ padding:12px; }
   .board-range{ min-width:0; font-size:14px; }
+  /* 日檢視：時間軸壓縮成滿版，時間文字改顯示在姓名欄 */
+  .board{ --row-h:52px; --name-w:88px; }
+  .board .bd-who .nm{ font-size:13px; }
+  .board .bd-time{ display:block; font-size:10.5px; }
+  .board .seg .lbl{ display:none; }
+  .board .name-cell{ padding:0 7px; }
+  .board .th-hour{ font-size:10px; padding:7px 0; }
+  .board .th-hour span{ display:none; }
+  .board .th-hour:nth-child(3n+1) span{ display:inline; }   /* 每 3 小時標一次，避免擁擠 */
 }
